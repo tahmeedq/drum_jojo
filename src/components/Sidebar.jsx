@@ -1,7 +1,7 @@
 import { S } from "../engine/state.js";
 import { LIB, SONGS, COURSE, SECTION_TITLES } from "../engine/data/index.js";
 import { store, lessonKey, saveStore } from "../engine/core/store.js";
-import { selectLesson, selectSong, selectPattern, newCustom, loadCustom } from "../engine/controller.js";
+import { selectLesson, selectSong, selectPattern, newCustom, loadCustom, newCustomSong, loadCustomSong } from "../engine/controller.js";
 import { useRenderOn } from "../hooks/useBus.js";
 
 const Stars = ({ n }) => <span className="stars">{"★".repeat(n || 1)}</span>;
@@ -9,7 +9,7 @@ const Stars = ({ n }) => <span className="stars">{"★".repeat(n || 1)}</span>;
 export default function Sidebar() {
   useRenderOn(["view"]);
   const sec = S.sec;
-  const title = sec === "create" ? "My Patterns" : (SECTION_TITLES[sec] || "Library");
+  const title = sec === "create" ? "Create" : (SECTION_TITLES[sec] || "Library");
 
   return (
     <aside className="card sidebar">
@@ -70,23 +70,40 @@ function Patterns({ sec }) {
 
 function Create() {
   useRenderOn(["view"]);
-  const del = (e, i) => {
+  const delPat = (e, i) => {
     e.stopPropagation();
     store.custom.splice(i, 1); saveStore();
     if (store.custom.length) loadCustom(store.custom[0]); else newCustom();
   };
+  const delSong = (e, i) => {
+    e.stopPropagation();
+    store.customSongs.splice(i, 1); saveStore();
+    if (store.customSongs.length) loadCustomSong(store.customSongs[0]); else newCustomSong();
+  };
   return (
     <>
-      <button className="item newbtn" onClick={newCustom}>
-        <span>＋ New pattern</span>
-      </button>
+      <div className="famhdr">My Songs</div>
+      <button className="item newbtn" onClick={newCustomSong}><span>＋ New song</span></button>
+      {store.customSongs.length === 0 && <div className="empty">No songs yet. Chain sections into an arrangement.</div>}
+      {store.customSongs.map((s, i) => {
+        const active = S.itemKey === `csong:${s._id}`;
+        return (
+          <button key={s._id} className={"item" + (active ? " active" : "")} onClick={() => loadCustomSong(s)}>
+            <span>{s.name}<span className="meta">{s.parts.length} section{s.parts.length > 1 ? "s" : ""} · {s.bpm} bpm</span></span>
+            <span className="del" title="Delete" onClick={(e) => delSong(e, i)}>✕</span>
+          </button>
+        );
+      })}
+
+      <div className="famhdr">My Patterns</div>
+      <button className="item newbtn" onClick={newCustom}><span>＋ New pattern</span></button>
       {store.custom.length === 0 && <div className="empty">No saved patterns yet. Build one in the grid and hit Save.</div>}
       {store.custom.map((p, i) => {
         const active = S.itemKey === `custom:${p._id}`;
         return (
           <button key={p._id || i} className={"item" + (active ? " active" : "")} onClick={() => loadCustom(p)}>
             <span>{p.name}<span className="meta">{p.meter} · {p.bpm} bpm</span></span>
-            <span className="del" title="Delete" onClick={(e) => del(e, i)}>✕</span>
+            <span className="del" title="Delete" onClick={(e) => delPat(e, i)}>✕</span>
           </button>
         );
       })}

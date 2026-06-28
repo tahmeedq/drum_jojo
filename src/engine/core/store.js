@@ -13,6 +13,7 @@ export const store = {
 
   best: {},            // itemKey -> { acc, meanMs, spread, dynAcc, bpm, date }
   custom: [],          // user-created patterns
+  customSongs: [],     // user-built arrangements (sections + bar counts)
   stats: {
     totalSeconds: 0,   // lifetime practice time
     streak: 0,         // consecutive days practiced
@@ -29,6 +30,7 @@ export function loadStore() {
     store.stats = Object.assign({ totalSeconds: 0, streak: 0, lastDay: null, sessions: [], reps: 0 }, saved.stats || {});
     store.best = saved.best || {};
     store.custom = saved.custom || [];
+    store.customSongs = saved.customSongs || [];
   } catch (e) {}
 }
 

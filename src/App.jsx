@@ -12,6 +12,7 @@ import Transport from "./components/Transport.jsx";
 import Grid from "./components/Grid.jsx";
 import MidiPanel from "./components/MidiPanel.jsx";
 import SongTimeline from "./components/SongTimeline.jsx";
+import SongBuilder from "./components/SongBuilder.jsx";
 import SessionSummary from "./components/SessionSummary.jsx";
 
 export default function App() {
@@ -62,7 +63,7 @@ export default function App() {
           <PatternHeader />
           <Transport />
           <MidiPanel />
-          {isSong && <SongTimeline />}
+          {isSong && (S.editSong ? <SongBuilder /> : <SongTimeline />)}
           <Grid />
         </main>
       </div>

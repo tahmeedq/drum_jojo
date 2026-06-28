@@ -32,7 +32,7 @@ export const S = {
   trainerInc: 4, trainerTarget: 0,
 
   // editing
-  editMode: false,
+  editMode: false, editSong: false,
 
   // midi
   midiOn: false, midiMonitor: true, gradeDynamics: true,

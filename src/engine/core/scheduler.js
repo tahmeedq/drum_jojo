@@ -14,8 +14,9 @@
 import { Audio } from "../audio/engine.js";
 import { trigger, loadSamples, isSamplesReady } from "../audio/voices.js";
 import { S, emit } from "../state.js";
-import { activeRows, prep } from "./patterns.js";
+import { activeRows, prep, fromSaved } from "./patterns.js";
 import { findPattern } from "../data/index.js";
+import { store } from "./store.js";
 
 const lookahead = 25, scheduleAhead = 0.12;
 let timer = null, nextNoteTime = 0, countLeft = 0;
@@ -80,7 +81,16 @@ function scheduleCount(beat, time) {
 
 export function setSongPart(i) {
   const part = S.song.parts[i];
-  S.current = prep(findPattern(part.ref[0], part.ref[1]));
+  let p = null;
+  if (part.src) {                         // custom song: "groove:Name" / "fill:Name" / "custom:id"
+    const c = part.src.indexOf(":");
+    const kind = part.src.slice(0, c), key = part.src.slice(c + 1);
+    if (kind === "custom") { const s = store.custom.find(x => x._id === key); p = s ? fromSaved(s) : null; }
+    else p = findPattern(kind, key);
+  } else if (part.ref) {                   // built-in song
+    p = findPattern(part.ref[0], part.ref[1]);
+  }
+  S.current = prep(p || findPattern("groove", "Basic Rock Beat"));
   S.muted = {};
 }
 

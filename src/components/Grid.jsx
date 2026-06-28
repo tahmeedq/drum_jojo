@@ -5,6 +5,7 @@ import { ROWS } from "../engine/data/index.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { setEditMode, loadCustom, selectSection } from "../engine/controller.js";
 import { useBus, useForceRender, useRenderOn } from "../hooks/useBus.js";
+import Notation from "./Notation.jsx";
 
 const labelFor = (id) => (ROWS.find(r => r.id === id) || {}).label || id;
 
@@ -20,7 +21,9 @@ export default function Grid() {
   useRenderOn(["view", "partChanged"]);
   const rerender = useForceRender();
   const tableRef = useRef(null);
+  const [scoreView, setScoreView] = useState(store.scoreView === "notation" ? "notation" : "grid");
   const p = S.current;
+  const setView = (v) => { setScoreView(v); store.scoreView = v; saveStore(); };
 
   // Real-time playhead + MIDI flashes via direct DOM (kept out of React's
   // render path so fast events never trigger reconciliation).
@@ -66,10 +69,17 @@ export default function Grid() {
 
   return (
     <div className="gridzone">
-      <EditBar />
+      <div className="scorehead">
+        <div className="seg viewtoggle">
+          <button className={"mini" + (scoreView === "grid" ? " on" : "")} onClick={() => setView("grid")}>▦ Grid</button>
+          <button className={"mini" + (scoreView === "notation" ? " on" : "")} onClick={() => setView("notation")}>♪ Notation</button>
+        </div>
+        {scoreView === "grid" && <EditBar />}
+      </div>
       <CoachBanner />
       <Toasts />
 
+      {scoreView === "notation" ? <Notation /> : (
       <div className="gridwrap">
         <table className="grid" ref={tableRef}>
           <tbody>
@@ -137,6 +147,7 @@ export default function Grid() {
           </tbody>
         </table>
       </div>
+      )}
 
       <Legend />
     </div>
