@@ -43,6 +43,10 @@ export const GROOVES = [
     desc: "Relentless 8th hats and a driving kick — pure energy.",
     tip: "Stay loose so you don't tense up at speed. Let the backbeat snap.",
     tracks: { hat: "x.x.x.x.x.x.x.x.", snare: "....x.......x...", kick: "x.x.x.x.x.x.x.x." } },
+  { name: "Shuffle Rock", style: "Rock", diff: 3, meter: "shuffle", bpm: 110, sub: 3,
+    desc: "A rock groove with a triplet shuffle bounce on the hats and kick.",
+    tip: "Swing the hats hard. The shuffle is what separates this from a straight rock beat.",
+    tracks: { hat: "x.xx.xx.xx.x", snare: "...x.....x..", kick: "x..x..x..x.." } },
 
   // ===================== POP / DANCE =====================
   { name: "Four-on-the-Floor", style: "Pop / Dance", diff: 2, meter: "4/4", bpm: 122, sub: 4,
@@ -99,6 +103,10 @@ export const GROOVES = [
     desc: "Dense single-hand 16th hats over busy ghosts and kick — a real workout.",
     tip: "Keep the right hand relaxed and even. The groove lives in the ghost-note dynamics.",
     tracks: { hat: "xxxxxxxxxxxxxxxx", snare: "..o.X..o.oo.X..o", kick: "x..x..x..x.x...x" } },
+  { name: "Half-Time Funk", style: "Funk", diff: 3, meter: "4/4", bpm: 96, sub: 4,
+    desc: "16th hats with a big half-time backbeat on 3 and ghosted snares.",
+    tip: "Huge and patient. The single snare on 3 hits hard; everything around it whispers.",
+    tracks: { hat: "xxxxxxxxxxxxxxxx", snare: "..o.....X..o....", kick: "x..x.....x.x...x" } },
 
   // ===================== R&B / NEO-SOUL =====================
   { name: "Neo-Soul Groove", style: "R&B / Neo-Soul", diff: 3, meter: "4/4", bpm: 84, sub: 4,
@@ -243,6 +251,14 @@ export const GROOVES = [
     desc: "Brazilian baião — the characteristic 'dum-ka-dum' kick under cross-stick.",
     tip: "The kick figure is the signature. Keep the hats even and the cross-stick on 2 & 4.",
     tracks: { hat: "x.x.x.x.x.x.x.x.", rim: "....x.......x...", kick: "x..x..x.x..x..x." } },
+  { name: "Mambo", style: "Latin / World", diff: 4, meter: "4/4", bpm: 108, sub: 4,
+    desc: "Mambo bell pattern over a cross-stick clave and a tumbao kick.",
+    tip: "Ride the bell pattern steadily; the kick 'tumbao' lands off the beat for that Latin push.",
+    tracks: { ride: "x.xx.x.xx.x.xx.x", rim: "..x.x.....x.x...", kick: "...x..x....x..x." } },
+  { name: "Merengue", style: "Latin / World", diff: 3, meter: "4/4", bpm: 130, sub: 4,
+    desc: "Fast Dominican merengue — a driving two-feel with relentless energy.",
+    tip: "Keep it light and quick. The constant kick and hats power the dance.",
+    tracks: { hat: "x.x.x.x.x.x.x.x.", snare: "....x.......x...", kick: "x.x.x.x.x.x.x.x." } },
 
   // ===================== REGGAE / CARIBBEAN =====================
   { name: "Reggae One Drop", style: "Reggae / Caribbean", diff: 2, meter: "4/4", bpm: 80, sub: 4,
@@ -293,6 +309,10 @@ export const GROOVES = [
     desc: "Slick fusion groove with mixed ghost/accent snares and a syncopated kick.",
     tip: "Think Gadd/Chambers — linear-feeling and conversational. Keep it relaxed and precise.",
     tracks: { hat: "xxxxxxxxxxxxxxxx", snare: "..oxX.o.x.o.X.ox", kick: "x..x.x..x..x.x.." } },
+  { name: "Linear Fusion", style: "Gospel / Fusion", diff: 5, meter: "4/4", bpm: 100, sub: 4,
+    desc: "A near-linear fusion pocket where hands and feet rarely overlap.",
+    tip: "Weave the hat, snare and kick into one stream — almost no two limbs hit together.",
+    tracks: { hat: "x.x.x.x.x.x.x.x.", snare: "...x..o.x...o.x.", kick: "x.x..x..x.x..x.." } },
 
   // ===================== ODD TIME =====================
   { name: "7/8 Rock", style: "Odd Time", diff: 4, meter: "7/8", bpm: 110, sub: 4,
@@ -315,4 +335,8 @@ export const GROOVES = [
     desc: "Nine 8th notes per bar, grouped 2+2+2+3.",
     tip: "Three even pairs then a three — the last group is the 'long' one. Count it out loud.",
     tracks: { hat: "x.x.x.x.x.x.x.x.x.", snare: "....x.......x.....", kick: "x.......x.....x..." } },
+  { name: "6/4 Groove", style: "Odd Time", diff: 3, meter: "6/4", bpm: 120, sub: 4,
+    desc: "Six quarter-note beats per bar — a wide, rolling extended meter.",
+    tip: "Count a steady 1-2-3-4-5-6. Backbeats land on 2, 4 and 6 to keep it grounded.",
+    tracks: { hat: "x.x.x.x.x.x.x.x.x.x.x.x.", snare: "....x.......x.......x...", kick: "x.......x.......x......." } },
 ];

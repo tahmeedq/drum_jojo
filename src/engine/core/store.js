@@ -9,7 +9,7 @@ export const store = {
   done: {}, vol: 85, reverb: 0.13,
   midiMonitor: true,
   swing: 0,
-  kit: "acoustic",
+  kit: "muldjord",
 
   best: {},            // itemKey -> { acc, meanMs, spread, dynAcc, bpm, date }
   custom: [],          // user-created patterns

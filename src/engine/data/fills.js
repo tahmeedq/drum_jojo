@@ -67,6 +67,10 @@ export const FILLS = [
     desc: "Repeated snare-tom 'stutters' that march down the kit.",
     tip: "Each pair is snare-then-tom. Keep the snare ghosted and the tom voiced.",
     tracks: { snare: "x.x.x.x.x.x.x.x.", tom1: ".x.x............", tom2: "....x.x.........", floor: "........x.x.x.x." } },
+  { name: "Octave Tom Fill", fam: "Tom Fills", diff: 3, meter: "16ths", bpm: 98, sub: 4,
+    desc: "High tom for two beats, floor tom for two — a wide 'octave' sweep.",
+    tip: "Exaggerate the pitch drop between the two halves for a dramatic, melodic fill.",
+    tracks: { tom1: "x.x.x.x.........", floor: "........x.x.x.x." } },
 
   // ---------------- TRIPLET / SWING ----------------
   { name: "Triplet Tom Fill", fam: "Triplet", diff: 2, meter: "triplet", bpm: 90, sub: 3,
@@ -115,6 +119,10 @@ export const FILLS = [
     desc: "Dense linear phrase with ghosted snare and quick kick fills.",
     tip: "Bury the ghosts, voice the accents. This is the gospel-chops sound.",
     tracks: { snare: "Xo.oXo.oXo.oXo.o", kick: "..x..x..x..x..x.", tom1: "...x........x...", floor: "...........x...." } },
+  { name: "Linear Latin Fill", fam: "Linear", diff: 4, meter: "16ths", bpm: 104, sub: 4,
+    desc: "A one-note-at-a-time fill with cross-stick accents and a syncopated kick.",
+    tip: "Keep it strictly linear and let the cross-stick 'pops' give it a Latin flavor.",
+    tracks: { snare: "x..x..x..x..x..x", rim: "..x.....x.......", kick: ".x..x..x..x..x.." } },
 
   // ---------------- RUDIMENTAL ----------------
   { name: "Paradiddle Kit Fill", fam: "Rudimental", diff: 3, meter: "16ths", bpm: 96, sub: 4,
@@ -182,6 +190,10 @@ export const FILLS = [
     desc: "Sextuplet double-kick roll with snare and floor accents on top.",
     tip: "Feet play smooth sextuplets; accent the snare on each beat to keep the pulse clear.",
     tracks: { snare: "X.....X.....X.....X.....", floor: "...x.x...x.x...x.x...x.x", kick: "xxxxxxxxxxxxxxxxxxxxxxxx" } },
+  { name: "Double-Bass 16th Run", fam: "Double Bass", diff: 4, meter: "16ths", bpm: 130, sub: 4,
+    desc: "Toms trade across a constant 16th double-kick for a flowing metal run.",
+    tip: "Keep the feet machine-even while the hands move tom-to-tom on top.",
+    tracks: { tom1: "x.x.........x.x.", floor: "....x.x.x.x.....", kick: "xxxxxxxxxxxxxxxx" } },
 
   // ---------------- ODD / HYBRID ----------------
   { name: "Fives Over Four", fam: "Odd / Hybrid", diff: 5, meter: "16ths", bpm: 92, sub: 4,
@@ -218,6 +230,10 @@ export const FILLS = [
     desc: "Accents growing across the bar, capped by a flam into the crash.",
     tip: "Each beat hits a little harder. The last flam should feel like a launch.",
     tracks: { snare: "o.o.x.x.X.X.XXX.", crash: "...............X", kick: "...............x" } },
+  { name: "Snare Build to Crash", fam: "Rolls / Builds", diff: 2, meter: "16ths", bpm: 92, sub: 4,
+    desc: "A pure dynamic build — ghost → hit → accent — exploding on the crash.",
+    tip: "One long crescendo on the snare. Start at a whisper and arrive huge on the crash.",
+    tracks: { snare: "ooooooooxxxxXXXX", crash: "...............X", kick: "...............x" } },
 
   // ---------------- CHOPS ----------------
   { name: "Gospel 16th Chops", fam: "Chops", diff: 5, meter: "16ths", bpm: 88, sub: 4,

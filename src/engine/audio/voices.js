@@ -41,8 +41,9 @@ export async function loadKit(id = DEFAULT_KIT) {
   const kit = findKit(id);
   loadingKit = kit.id;
   const next = {};
+  const ext = kit.ext || "mp3";
   await Promise.all(Object.entries(SAMPLE_MAP).map(async ([voice, file]) => {
-    try { next[voice] = await fetchDecode(`${BASE}samples/${kit.id}/${file}.mp3`); }
+    try { next[voice] = await fetchDecode(`${BASE}samples/${kit.id}/${file}.${ext}`); }
     catch (e) { /* fall back to synth for this voice */ }
   }));
   if (loadingKit !== kit.id) return kitInfo();   // a newer switch superseded us

@@ -60,9 +60,9 @@ export default function App() {
         <Sidebar />
         <main className="card workspace">
           <PatternHeader />
-          {isSong && <SongTimeline />}
           <Transport />
           <MidiPanel />
+          {isSong && <SongTimeline />}
           <Grid />
         </main>
       </div>
