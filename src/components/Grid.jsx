@@ -6,6 +6,8 @@ import { store, saveStore } from "../engine/core/store.js";
 import { setEditMode, loadCustom, selectSection } from "../engine/controller.js";
 import { useBus, useForceRender, useRenderOn } from "../hooks/useBus.js";
 import Notation from "./Notation.jsx";
+import KitView from "./KitView.jsx";
+import Highway from "./Highway.jsx";
 
 const labelFor = (id) => (ROWS.find(r => r.id === id) || {}).label || id;
 
@@ -73,13 +75,15 @@ export default function Grid() {
         <div className="seg viewtoggle">
           <button className={"mini" + (scoreView === "grid" ? " on" : "")} onClick={() => setView("grid")}>▦ Grid</button>
           <button className={"mini" + (scoreView === "notation" ? " on" : "")} onClick={() => setView("notation")}>♪ Notation</button>
+          <button className={"mini" + (scoreView === "kit" ? " on" : "")} onClick={() => setView("kit")}>🥁 Kit</button>
+          <button className={"mini" + (scoreView === "highway" ? " on" : "")} onClick={() => setView("highway")}>🛣 Highway</button>
         </div>
         {scoreView === "grid" && <EditBar />}
       </div>
       <CoachBanner />
       <Toasts />
 
-      {scoreView === "notation" ? <Notation /> : (
+      {scoreView === "highway" ? <Highway /> : scoreView === "kit" ? <KitView /> : scoreView === "notation" ? <Notation /> : (
       <div className="gridwrap">
         <table className="grid" ref={tableRef}>
           <tbody>
