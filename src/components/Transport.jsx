@@ -1,0 +1,134 @@
+import { useState } from "react";
+import { S } from "../engine/state.js";
+import { Audio } from "../engine/audio/engine.js";
+import { toggle, setBpm, tap } from "../engine/core/scheduler.js";
+import { activeRows } from "../engine/core/patterns.js";
+import { ROWS } from "../engine/data/index.js";
+import { store, saveStore } from "../engine/core/store.js";
+import { useBus, useForceRender, useRenderOn } from "../hooks/useBus.js";
+
+const labelFor = (id) => (ROWS.find(r => r.id === id) || {}).label || id;
+const PRESETS = [60, 80, 100, 120, 140, 160];
+
+export default function Transport() {
+  useRenderOn(["view"]);
+  const rerender = useForceRender();
+  const [bpm, setBpmState] = useState(S.bpm);
+  const [play, setPlay] = useState({ playing: false, label: "▶" });
+  const [rep, setRep] = useState(0);
+
+  useBus("bpm", (d) => setBpmState(d.bpm));
+  useBus("transport", (d) => {
+    if (d.playing) { setPlay({ playing: true, label: S.countIn ? "4" : "■" }); Audio.setVolume(store.vol); setRep(0); }
+    else setPlay({ playing: false, label: "▶" });
+  });
+  useBus("count", (d) => setPlay(p => ({ ...p, label: d.n > 0 ? String(d.n) : "■" })));
+  useBus("rep", (d) => setRep(d.rep));
+
+  const toggleS = (key, persistKey) => {
+    S[key] = !S[key];
+    if (persistKey) { store[persistKey] = S[key]; saveStore(); }
+    rerender();
+  };
+
+  return (
+    <section className="transport">
+      <div className="transport-main">
+        <button className={"play" + (play.playing ? " on" : "")} onClick={toggle} title="Play / Stop (Space)">
+          {play.label}
+        </button>
+
+        <div className="ctl tempo-ctl">
+          <label>Tempo · BPM</label>
+          <div className="bpmrow">
+            <input type="number" min="30" max="280" value={bpm}
+              onChange={(e) => setBpm(e.target.value)} />
+            <input type="range" min="30" max="280" value={bpm}
+              onChange={(e) => setBpm(e.target.value)} />
+          </div>
+          <div className="presets">
+            {PRESETS.map(b => <button key={b} onClick={() => setBpm(b)}>{b}</button>)}
+            <button className="tap" onClick={tap} title="Tap tempo (T)">👆 Tap</button>
+          </div>
+        </div>
+
+        <div className="ctl">
+          <label>Feel · Swing</label>
+          <div className="swingrow">
+            <input type="range" min="0" max="60" value={Math.round(S.swing * 100)}
+              onChange={(e) => { S.swing = +e.target.value / 100; store.swing = S.swing; saveStore(); rerender(); }} />
+            <span className="swingval">{Math.round(S.swing * 100)}%</span>
+          </div>
+        </div>
+
+        <div className="ctl">
+          <label>Volume</label>
+          <input type="range" min="0" max="100" defaultValue={store.vol}
+            onChange={(e) => { store.vol = +e.target.value; Audio.setVolume(store.vol); saveStore(); }} />
+        </div>
+      </div>
+
+      <div className="transport-tools">
+        <div className="toolgroup">
+          <span className="toollabel">Metronome</span>
+          <button className={"mini" + (S.click ? " on" : "")} onClick={() => toggleS("click")}>Click</button>
+          <select className="dropdown" defaultValue={S.clickRes} onChange={(e) => { S.clickRes = e.target.value; }}>
+            <option value="beat">on Beats</option>
+            <option value="all">on Subdivisions</option>
+          </select>
+          <button className={"mini" + (S.countIn ? " on" : "")} onClick={() => toggleS("countIn")}>Count-in</button>
+        </div>
+
+        <div className="toolgroup">
+          <span className="toollabel">Loop</span>
+          <button className={"mini" + (S.loop ? " on" : "")} onClick={() => toggleS("loop")}>Loop</button>
+          <select className="dropdown" defaultValue={S.loopBars} onChange={(e) => { S.loopBars = +e.target.value; }}>
+            {[1, 2, 4, 8].map(n => <option key={n} value={n}>{n} bar{n > 1 ? "s" : ""}</option>)}
+          </select>
+          <select className="dropdown" defaultValue={S.repTarget} onChange={(e) => { S.repTarget = +e.target.value; }} title="Stop after N reps">
+            <option value="0">∞ reps</option>
+            {[4, 8, 16, 32].map(n => <option key={n} value={n}>{n} reps</option>)}
+          </select>
+          {play.playing && <span className="repcount">rep {rep}</span>}
+        </div>
+
+        <div className="toolgroup">
+          <span className="toollabel">Speed Trainer</span>
+          <button className={"mini" + (S.trainer ? " on" : "")} onClick={() => toggleS("trainer")} title="Raise tempo each loop">Auto-tempo</button>
+          <select className="dropdown" defaultValue={S.trainerInc} onChange={(e) => { S.trainerInc = +e.target.value; }}>
+            {[2, 4, 6, 10].map(n => <option key={n} value={n}>+{n} bpm</option>)}
+          </select>
+          <select className="dropdown" defaultValue={S.trainerTarget} onChange={(e) => { S.trainerTarget = +e.target.value; }}>
+            <option value="0">no target</option>
+            {[100, 120, 140, 160, 180, 200].map(n => <option key={n} value={n}>→ {n} bpm</option>)}
+          </select>
+        </div>
+
+        <div className="toolgroup">
+          <span className="toollabel">Practice</span>
+          <button className={"mini amber" + (S.guideMute ? " on" : "")} onClick={() => toggleS("guideMute")} title="Mute the kit, keep the click">Metronome Only</button>
+          <button className={"mini blue" + (S.trade ? " on" : "")} onClick={() => toggleS("trade")} title="Alternate demo bar / your bar">Trade: Demo↔You</button>
+        </div>
+      </div>
+
+      <MuteRow />
+    </section>
+  );
+}
+
+function MuteRow() {
+  useRenderOn(["view", "partChanged"]);
+  const rerender = useForceRender();
+  const rows = activeRows();
+  return (
+    <div className="voices">
+      <span className="lbl">Mute (play these yourself):</span>
+      {rows.map(row => (
+        <button key={row.id} className={S.muted[row.id] ? "muted" : ""}
+          onClick={() => { S.muted[row.id] = !S.muted[row.id]; rerender(); }}>
+          {labelFor(row.id)}
+        </button>
+      ))}
+    </div>
+  );
+}

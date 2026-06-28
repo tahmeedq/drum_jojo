@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drum Dojo — Play-Along Trainer</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="appbar">
+  <div class="brand">
+    <div class="logo">🥁</div>
+    <div>
+      <h1>Drum <span>Dojo</span></h1>
+      <div class="tag">Learn to play like a pro — on your own kit.</div>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <button data-sec="course" class="active">📚 Course</button>
+    <button data-sec="groove">Grooves</button>
+    <button data-sec="rudiment">Rudiments</button>
+    <button data-sec="fill">Fills</button>
+    <button data-sec="song">Song Mode</button>
+  </nav>
+  <div class="kitpick">
+    <span class="dot" id="kitDot"></span><span id="kitLabel">Loading kit…</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside class="card">
+    <div class="lib-title" id="libTitle">Curriculum</div>
+    <div class="lib" id="lib"></div>
+  </aside>
+
+  <main class="card">
+    <div class="phead">
+      <div>
+        <h2 id="ptnName">—</h2>
+        <div class="badges" id="badges"></div>
+      </div>
+    </div>
+    <p class="desc" id="ptnDesc"></p>
+
+    <div class="lesson" id="lessonBox" style="display:none">
+      <div class="goal"><b>Goal</b><p id="lessonGoal"></p></div>
+      <div class="focus" id="lessonFocus"></div>
+    </div>
+
+    <div class="transport">
+      <button class="play" id="playBtn" title="Play / Stop (Space)">▶</button>
+      <div class="ctl">
+        <label>Tempo (BPM)</label>
+        <div class="bpmrow">
+          <input type="number" id="bpmNum" min="30" max="280" value="90">
+          <input type="range" id="bpmRange" min="30" max="280" value="90">
+        </div>
+        <div class="presets">
+          <button data-bpm="60">60</button><button data-bpm="80">80</button>
+          <button data-bpm="100">100</button><button data-bpm="120">120</button><button data-bpm="140">140</button>
+        </div>
+      </div>
+      <div class="ctl"><label>Tap</label><button class="mini" id="tapBtn">👆 Tap (T)</button></div>
+      <div class="ctl"><label>Metronome</label>
+        <div class="seg">
+          <button class="mini on" id="clickBtn">Click</button>
+          <select class="dropdown" id="clickRes"><option value="beat">on Beats</option><option value="all">on Subdivisions</option></select>
+        </div>
+      </div>
+      <div class="ctl"><label>Practice</label>
+        <div class="seg">
+          <button class="mini on" id="countBtn">Count-in</button>
+          <button class="mini" id="trainBtn" title="+4 BPM each loop">Speed Trainer</button>
+          <button class="mini amber" id="guideBtn" title="Mute the kit, keep only the click">Metronome Only</button>
+          <button class="mini blue" id="tradeBtn" title="Alternate a demo bar and a play-it-yourself bar">Trade: Demo↔You</button>
+        </div>
+      </div>
+      <div class="ctl"><label>Volume</label><input type="range" id="vol" min="0" max="100" value="85"></div>
+    </div>
+
+    <div id="coachBanner"></div>
+    <div id="songStruct"></div>
+
+    <div class="gridwrap"><table class="grid" id="grid"></table></div>
+
+    <div class="legend">
+      <span><i class="sw" style="background:var(--accent2)"></i> hit</span>
+      <span><i class="sw" style="background:var(--accent)"></i> accent</span>
+      <span><i class="sw" style="background:var(--muted2);width:8px;height:8px"></i> ghost note</span>
+      <span><i class="sw" style="background:var(--hit)"></i> playing now</span>
+      <span>f = flam · d = drag · z = buzz</span>
+    </div>
+
+    <div class="voices" id="voices"></div>
+    <div class="tip" id="tip"></div>
+
+    <div class="lessonbar" id="lessonBar" style="display:none">
+      <button class="btn primary" id="markBtn">Mark complete &amp; next ▶</button>
+      <span class="progress" id="progress"></span>
+    </div>
+
+    <div class="hint">
+      Shortcuts: <kbd>Space</kbd> play/stop · <kbd>T</kbd> tap tempo · <kbd>↑</kbd>/<kbd>↓</kbd> nudge BPM.
+      Tip: turn on <b>Metronome Only</b> to play the whole groove with just the click, or <b>Trade: Demo↔You</b> for call-and-response practice.
+    </div>
+  </main>
+</div>
+
+<script src="samples.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

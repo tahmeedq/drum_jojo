@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drum Dojo — Pro Play-Along Trainer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <div class="logo">🥁</div>
+    <div>
+      <h1>Drum <span>Dojo</span></h1>
+      <div class="tag">Play like a pro — on your own kit.</div>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <button data-sec="course" class="active">Course</button>
+    <button data-sec="groove">Grooves</button>
+    <button data-sec="rudiment">Rudiments</button>
+    <button data-sec="fill">Fills</button>
+    <button data-sec="song">Song Mode</button>
+  </nav>
+  <div class="kitpick">
+    <span class="dot" id="kitDot"></span><span id="kitLabel">Loading kit…</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="card lib-card">
+    <div class="lib-title" id="libTitle">Curriculum</div>
+    <div class="lib" id="lib"></div>
+  </aside>
+
+  <main class="card main-card">
+    <div class="phead">
+      <div>
+        <h2 id="ptnName">—</h2>
+        <div class="badges" id="badges"></div>
+      </div>
+    </div>
+    <p class="desc" id="ptnDesc"></p>
+
+    <div class="lesson" id="lessonBox" style="display:none">
+      <div class="goal"><b>Goal</b><p id="lessonGoal"></p></div>
+      <div class="focus" id="lessonFocus"></div>
+    </div>
+
+    <section class="transport">
+      <button class="play" id="playBtn" title="Play / Stop (Space)">▶</button>
+      <div class="ctl tempo-ctl">
+        <label>Tempo · BPM</label>
+        <div class="bpmrow">
+          <input type="number" id="bpmNum" min="30" max="280" value="90">
+          <input type="range" id="bpmRange" min="30" max="280" value="90">
+        </div>
+        <div class="presets">
+          <button data-bpm="60">60</button><button data-bpm="80">80</button>
+          <button data-bpm="100">100</button><button data-bpm="120">120</button><button data-bpm="140">140</button>
+        </div>
+      </div>
+      <div class="ctl"><label>Tap</label><button class="mini" id="tapBtn">👆 Tap (T)</button></div>
+      <div class="ctl"><label>Metronome</label>
+        <div class="seg">
+          <button class="mini on" id="clickBtn">Click</button>
+          <select class="dropdown" id="clickRes"><option value="beat">on Beats</option><option value="all">on Subdivisions</option></select>
+        </div>
+      </div>
+      <div class="ctl wide"><label>Practice Tools</label>
+        <div class="seg">
+          <button class="mini on" id="countBtn">Count-in</button>
+          <button class="mini" id="trainBtn" title="+4 BPM each loop">Speed Trainer</button>
+          <button class="mini amber" id="guideBtn" title="Mute the kit, keep only the click">Metronome Only</button>
+          <button class="mini blue" id="tradeBtn" title="Alternate a demo bar and a play-it-yourself bar">Trade: Demo↔You</button>
+        </div>
+      </div>
+      <div class="ctl"><label>Volume</label><input type="range" id="vol" min="0" max="100" value="85"></div>
+    </section>
+
+    <div id="coachBanner"></div>
+    <div id="songStruct"></div>
+
+    <section class="midi-panel" id="midiPanel"></section>
+
+    <div class="gridwrap"><table class="grid" id="grid"></table></div>
+
+    <div class="legend">
+      <span><i class="sw" style="background:var(--accent2)"></i> hit</span>
+      <span><i class="sw" style="background:var(--accent)"></i> accent</span>
+      <span><i class="sw" style="background:var(--muted2);width:8px;height:8px"></i> ghost note</span>
+      <span><i class="sw" style="background:var(--hit)"></i> playing now</span>
+      <span>f = flam · d = drag · z = buzz</span>
+    </div>
+
+    <div class="voices" id="voices"></div>
+    <div class="tip" id="tip"></div>
+
+    <div class="lessonbar" id="lessonBar" style="display:none">
+      <button class="btn primary" id="markBtn">Mark complete &amp; next ▶</button>
+      <span class="progress" id="progress"></span>
+    </div>
+
+    <div class="hint">
+      <span><kbd>Space</kbd> play/stop</span><span><kbd>T</kbd> tap tempo</span><span><kbd>↑</kbd>/<kbd>↓</kbd> nudge BPM</span>
+      <span>On an e-kit? Hit <b>Connect MIDI</b> to grade your timing live.</span>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
