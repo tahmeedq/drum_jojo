@@ -4,6 +4,21 @@ import { MIDI } from "../engine/midi/midi.js";
 import { Audio } from "../engine/audio/engine.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { useForceRender } from "../hooks/useBus.js";
+import "../styles/a11y.css";
+
+/** Build a screen-reader announcement string for a graded MIDI hit.
+ *  @param {"perfect"|"good"|"off"} rating
+ *  @param {number} deltaMs  Signed offset in ms (negative = rushing)
+ *  @returns {string}
+ */
+function hitAnnouncement(rating, deltaMs) {
+  const label = rating === "perfect" ? "Perfect" : rating === "good" ? "Good" : "Off";
+  if (deltaMs == null) return label;
+  const abs = Math.abs(Math.round(deltaMs));
+  if (abs <= 5) return `${label}, on time`;
+  const dir = deltaMs < 0 ? "early (rushing)" : "late (dragging)";
+  return `${label}, ${abs} ms ${dir}`;
+}
 
 const pct = (ms) => Math.max(-50, Math.min(50, ms)) + 50;   // -50..50ms → 0..100%
 
@@ -18,6 +33,10 @@ export default function MidiPanel() {
                    : "Web MIDI isn't available in this browser — try Chrome or Edge.");
   const [stats, setStats] = useState({ samples: 0 });
   const [offset, setOffset] = useState(store.midiOffset);
+  // Aria-live announcement for each graded hit.
+  // { msg, seq } — incrementing seq causes the span to remount even when
+  // msg text is identical, ensuring screen readers re-announce each hit.
+  const [hitAnn, setHitAnn] = useState({ msg: "", seq: 0 });
 
   useEffect(() => {
     const offState = on("midiState", (d) => {
@@ -37,11 +56,15 @@ export default function MidiPanel() {
     });
     const offHit = on("midiHit", (d) => {
       if (!d.matched || d.deltaMs == null || !ticksRef.current) return;
+      // Existing visual tick
       const t = document.createElement("div");
       t.className = "tick " + d.rating + (d.dynOk === false ? " dynbad" : "");
       t.style.left = pct(d.deltaMs) + "%";
       ticksRef.current.appendChild(t);
       setTimeout(() => t.remove(), 1400);
+      // Screen-reader announcement — increment seq so span remounts and
+      // aria-live fires even if the rating text is unchanged from last hit.
+      setHitAnn((prev) => ({ msg: hitAnnouncement(d.rating, d.deltaMs), seq: prev.seq + 1 }));
     });
     const offCal = on("midiCal", (d) => setOffset(d.offset));
     return () => { offState(); offStats(); offHit(); offCal(); };
@@ -118,6 +141,13 @@ export default function MidiPanel() {
         <button className="mini" onClick={() => { MIDI.reset(); if (ticksRef.current) ticksRef.current.replaceChildren(); }}>
           ↺ Reset
         </button>
+      </div>
+
+      {/* Aria-live region: announces each graded hit to screen readers.
+          The inner span is keyed by seq so it remounts on every hit,
+          guaranteeing announcement even when the rating text repeats. */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        <span key={hitAnn.seq}>{hitAnn.msg}</span>
       </div>
     </section>
   );

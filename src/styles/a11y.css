@@ -1,0 +1,75 @@
+/* ============================================================
+   Drum Dojo — Accessibility overrides for timing feedback
+   Imported by MidiPanel.jsx only.
+   Adds non-color encoding to meter ticks (shape/size) and
+   provides the .sr-only utility for the aria-live region.
+   All rules ADD to existing styles; nothing is removed.
+   ============================================================ */
+
+/* ---- Visually-hidden utility (screen-reader only) ---------
+   Used for the aria-live announcement region in MidiPanel.
+   ---------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Non-color shape encoding for tick marks --------------
+   Each rating gets a distinct combination of width, height, and
+   border-radius so color-blind users can tell them apart by
+   shape alone. All values stay inside the 28 px meter-track.
+
+   Legend:
+     perfect ● — tall, wide, pill (rounded)
+     good    ◆ — medium height, wider bar, slightly rounded
+     off     ✕ — narrow, full height, square corners
+   ---------------------------------------------------------- */
+
+/* perfect ● — tall rounded pill, widest */
+.tick.perfect {
+  width: 4px;
+  top: 1px;
+  bottom: 1px;
+  margin-left: -2px;
+  border-radius: 4px;
+}
+
+/* good ◆ — medium height, wide, slightly rounded */
+.tick.good {
+  width: 7px;
+  margin-left: -3px;
+  top: 7px;
+  bottom: 7px;
+  border-radius: 2px;
+}
+
+/* off ✕ — thin, full height, no rounding */
+.tick.off {
+  width: 2px;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 0;
+}
+
+/* dynbad modifier — dashed outline flags bad dynamics */
+.tick.dynbad {
+  outline: 1.5px dashed currentColor;
+  outline-offset: 1px;
+}
+
+/* ---- Reduced-motion: disable tick fade animation ----------
+   Keeps ticks visible as static marks instead of fading out.
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tick {
+    animation: none !important;
+    opacity: 0.75;
+  }
+}

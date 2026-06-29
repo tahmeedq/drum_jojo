@@ -1,0 +1,116 @@
+/* ============================================================
+   Drum Dojo — First-run onboarding overlay
+   Imported by Onboarding.jsx only.
+   Extends .modal / .modal-backdrop from styles.css.
+   ============================================================ */
+
+/* Wider card for the onboarding flow */
+.ob-modal {
+  width: min(480px, 100%);
+  padding: 28px 30px 24px;
+}
+
+/* ---- Step-dot stepper ---- */
+.ob-stepper {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 4px;
+}
+.ob-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line2);
+  transition: width 0.22s ease, border-radius 0.22s ease, background 0.22s ease;
+}
+/* Active step: pill shape in ember */
+.ob-step-dot.active {
+  width: 26px;
+  border-radius: 4px;
+  background: var(--ember);
+}
+/* Completed step: cyan dot */
+.ob-step-dot.done {
+  background: var(--good);
+}
+
+/* ---- Step content area ---- */
+.ob-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 22px 6px 26px;
+  min-height: 196px;
+}
+.ob-icon {
+  font-size: 48px;
+  line-height: 1;
+  /* Gentle pulse to draw attention, respects reduced-motion below */
+  animation: ob-pulse 2.4s ease-in-out infinite;
+}
+@keyframes ob-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-icon { animation: none; }
+}
+
+.ob-title {
+  font-family: var(--fd);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--txt);
+}
+.ob-text {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.68;
+  margin: 0;
+  max-width: 380px;
+}
+.ob-text strong {
+  color: var(--txt);
+  font-weight: 600;
+}
+
+/* ---- Navigation row ---- */
+.ob-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.ob-nav-r {
+  display: flex;
+  gap: 8px;
+}
+
+/* Skip — ghost button */
+.ob-skip {
+  font-size: 12.5px;
+  padding: 9px 14px;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+.ob-skip:hover {
+  color: var(--txt);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line);
+}
+
+.ob-back {
+  font-size: 13px;
+  padding: 9px 16px;
+}
+.ob-next {
+  font-size: 13px;
+  padding: 9px 20px;
+}
