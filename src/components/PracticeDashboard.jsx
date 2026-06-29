@@ -18,8 +18,9 @@ import "../styles/dashboard.css";
    DATE / TIME HELPERS
    ═══════════════════════════════════════════════════════════════ */
 
-/** Format lifetime seconds as "Xh Ym". */
+/** Format lifetime seconds as "Xh Ym". Guards against undefined/NaN. */
 function fmtTime(totalSecs) {
+  totalSecs = Number(totalSecs) || 0;
   const h = Math.floor(totalSecs / 3600);
   const m = Math.floor((totalSecs % 3600) / 60);
   if (h === 0 && m === 0) return "0m";
@@ -82,7 +83,7 @@ function buildDayMap(sessions) {
  */
 function buildHeatmapCells(dayMap) {
   const today = todayUTC();
-  // ~119 days back covers 17 full weeks
+  // today + 118 prior days = 119 days, ~17 weeks before Sunday-alignment
   let start = shiftDay(today, -118);
   // Rewind to the Sunday of that week
   const dow = weekday(start);
@@ -505,7 +506,7 @@ export default function PracticeDashboard({ onClose }) {
         {/* Headline stat tiles */}
         <div className="db-tiles">
           <StatTile icon="🔥" value={streak || 0}                     label="Day streak"    />
-          <StatTile icon="⏱" value={fmtTime(totalSeconds)}            label="Total time"    />
+          <StatTile icon="⏱" value={fmtTime(totalSeconds ?? 0)}       label="Total time"    />
           <StatTile icon="🔁" value={(reps || 0).toLocaleString()}     label="Lifetime reps" />
           <StatTile icon="📅" value={sessions.length}                  label="Sessions"      />
         </div>
