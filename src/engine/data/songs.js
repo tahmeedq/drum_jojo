@@ -1,7 +1,10 @@
 /* ============================================================
    Songs — chain grooves + fills into arrangements.
    ============================================================ */
+import { JAAN_SE_GUZARTE_HAIN } from "./jaanSeGuzarteHain.js";
+
 export const SONGS = [
+  JAAN_SE_GUZARTE_HAIN,
   { name: "Rock Anthem", bpm: 112, desc: "Intro → verse → fill → chorus → fill. A classic arrangement.",
     parts: [
       { label: "Intro",  ref: ["groove", "Basic Rock Beat"], bars: 2 },

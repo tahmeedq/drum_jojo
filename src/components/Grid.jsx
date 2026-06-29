@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import { S, COUNT, on } from "../engine/state.js";
 import { activeRows, cycleCell, tracksToStrings, blankPattern } from "../engine/core/patterns.js";
 import { ROWS } from "../engine/data/index.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { setEditMode, loadCustom, selectSection } from "../engine/controller.js";
 import { useBus, useForceRender, useRenderOn } from "../hooks/useBus.js";
-import Notation from "./Notation.jsx";
-import KitView from "./KitView.jsx";
-import Highway from "./Highway.jsx";
+
+// Heavy/secondary views are code-split so the app (and the default Grid view)
+// loads light — VexFlow only downloads when Notation is first opened.
+const Notation = lazy(() => import("./Notation.jsx"));
+const KitView = lazy(() => import("./KitView.jsx"));
+const Highway = lazy(() => import("./Highway.jsx"));
 
 const labelFor = (id) => (ROWS.find(r => r.id === id) || {}).label || id;
 
@@ -83,7 +86,11 @@ export default function Grid() {
       <CoachBanner />
       <Toasts />
 
-      {scoreView === "highway" ? <Highway /> : scoreView === "kit" ? <KitView /> : scoreView === "notation" ? <Notation /> : (
+      {scoreView !== "grid" ? (
+        <Suspense fallback={<div className="view-loading">Loading view…</div>}>
+          {scoreView === "highway" ? <Highway /> : scoreView === "kit" ? <KitView /> : <Notation />}
+        </Suspense>
+      ) : (
       <div className="gridwrap">
         <table className="grid" ref={tableRef}>
           <tbody>

@@ -82,7 +82,9 @@ function scheduleCount(beat, time) {
 export function setSongPart(i) {
   const part = S.song.parts[i];
   let p = null;
-  if (part.src) {                         // custom song: "groove:Name" / "fill:Name" / "custom:id"
+  if (part.pattern) {                     // inline pattern (e.g. full transcriptions)
+    p = part.pattern;
+  } else if (part.src) {                  // custom song: "groove:Name" / "fill:Name" / "custom:id"
     const c = part.src.indexOf(":");
     const kind = part.src.slice(0, c), key = part.src.slice(c + 1);
     if (kind === "custom") { const s = store.custom.find(x => x._id === key); p = s ? fromSaved(s) : null; }
