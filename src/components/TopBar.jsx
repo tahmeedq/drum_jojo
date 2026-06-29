@@ -22,7 +22,7 @@ const fmtTime = (s) => {
   return `${Math.floor(s)}s`;
 };
 
-export default function TopBar({ leftOpen, rightOpen, onToggleLeft, onToggleRight } = {}) {
+export default function TopBar({ leftOpen, rightOpen, onToggleLeft, onToggleRight, onOpenDashboard } = {}) {
   useRenderOn(["view", "transport"]);   // refresh nav + practice-time chip
   const [kit, setKit] = useState({ ready: false, label: "Loading kit…" });
   useEffect(() => {
@@ -72,8 +72,8 @@ export default function TopBar({ leftOpen, rightOpen, onToggleLeft, onToggleRigh
           <b>{fmtTime(st.totalSeconds || 0)}</b>
         </div>
 
-        {/* Progress dashboard launcher — orchestrator wires the onClick to open the dashboard overlay. */}
-        <button className="hbtn progress-btn" data-action="open-dashboard" title="Progress dashboard">
+        {/* Progress dashboard launcher. */}
+        <button className="hbtn progress-btn" onClick={onOpenDashboard} title="Progress dashboard">
           <span className="hbtn-ico">📊</span><span className="progress-lbl">Progress</span>
         </button>
 

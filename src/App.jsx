@@ -14,11 +14,16 @@ import MidiPanel from "./components/MidiPanel.jsx";
 import SongTimeline from "./components/SongTimeline.jsx";
 import SongBuilder from "./components/SongBuilder.jsx";
 import SessionSummary from "./components/SessionSummary.jsx";
+import CommandPalette from "./components/CommandPalette.jsx";
+import PracticeDashboard from "./components/PracticeDashboard.jsx";
+import Onboarding from "./components/Onboarding.jsx";
 
 export default function App() {
   // Re-render the tree on selection changes.
   useRenderOn(["view"]);
   const [summary, setSummary] = useState(null);
+  const [showDash, setShowDash] = useState(false);             // Progress dashboard overlay
+  const [showOnboard, setShowOnboard] = useState(() => !store.onboarded);  // first-run flow
   const lastStats = useRef({ samples: 0 });
 
   // Boot: land on the course.
@@ -88,6 +93,7 @@ export default function App() {
         rightOpen={rightOpen}
         onToggleLeft={() => setLeftOpen(o => !o)}
         onToggleRight={() => setRightOpen(o => !o)}
+        onOpenDashboard={() => setShowDash(true)}
       />
 
       <div
@@ -153,9 +159,14 @@ export default function App() {
 
       {summary && <SessionSummary {...summary} onClose={() => setSummary(null)} />}
 
-      {/* MOUNT: command-palette (mount <CommandPalette/> once) */}
-      {/* MOUNT: onboarding overlay */}
-      {/* MOUNT: dashboard overlay */}
+      {/* Global ⌘K command palette — self-manages its own open/close. */}
+      <CommandPalette />
+
+      {/* First-run onboarding — gated on the persisted store.onboarded flag. */}
+      {showOnboard && <Onboarding onClose={() => setShowOnboard(false)} />}
+
+      {/* Progress dashboard overlay — opened from the header Progress button. */}
+      {showDash && <PracticeDashboard onClose={() => setShowDash(false)} />}
     </div>
   );
 }

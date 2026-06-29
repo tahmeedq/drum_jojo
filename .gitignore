@@ -13,3 +13,6 @@ dist/
 *.local
 .env
 .env.*
+
+# Agent worktrees (isolated; never commit)
+.claude/worktrees/
