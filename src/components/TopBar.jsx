@@ -22,7 +22,7 @@ const fmtTime = (s) => {
   return `${Math.floor(s)}s`;
 };
 
-export default function TopBar() {
+export default function TopBar({ leftOpen, rightOpen, onToggleLeft, onToggleRight } = {}) {
   useRenderOn(["view", "transport"]);   // refresh nav + practice-time chip
   const [kit, setKit] = useState({ ready: false, label: "Loading kit…" });
   useEffect(() => {
@@ -36,6 +36,14 @@ export default function TopBar() {
 
   return (
     <header className="topbar">
+      {/* Library drawer toggle — only visible on narrow viewports (CSS-gated). */}
+      <button
+        className="hbtn icon nav-toggle"
+        onClick={onToggleLeft}
+        title={leftOpen ? "Hide library" : "Show library"}
+        aria-label="Toggle library"
+      >☰</button>
+
       <div className="brand">
         <div className="logo">🥁</div>
         <div>
@@ -63,7 +71,21 @@ export default function TopBar() {
           <span className="ico">⏱</span>
           <b>{fmtTime(st.totalSeconds || 0)}</b>
         </div>
+
+        {/* Progress dashboard launcher — orchestrator wires the onClick to open the dashboard overlay. */}
+        <button className="hbtn progress-btn" data-action="open-dashboard" title="Progress dashboard">
+          <span className="hbtn-ico">📊</span><span className="progress-lbl">Progress</span>
+        </button>
+
         <KitPicker kit={kit} />
+
+        {/* Inspector drawer toggle — only visible on narrow viewports (CSS-gated). */}
+        <button
+          className="hbtn icon inspect-toggle"
+          onClick={onToggleRight}
+          title={rightOpen ? "Hide inspector" : "Show inspector"}
+          aria-label="Toggle inspector"
+        >🎛️</button>
       </div>
     </header>
   );

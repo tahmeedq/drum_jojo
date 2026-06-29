@@ -12,7 +12,7 @@ export default function Sidebar() {
   const title = sec === "create" ? "Create" : (SECTION_TITLES[sec] || "Library");
 
   return (
-    <aside className="card sidebar">
+    <aside className="sidebar">
       <div className="lib-title">{title}</div>
       <div className="lib">
         {sec === "course" && <Course />}
