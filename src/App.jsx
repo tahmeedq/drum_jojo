@@ -63,6 +63,23 @@ export default function App() {
   // Close any open overlay drawer (used by the mobile scrim).
   const closeDrawers = () => { setLeftOpen(false); setRightOpen(false); };
 
+  // Track when each rail is rendered as an off-screen overlay drawer (matches the
+  // CSS breakpoints). Only then should a CLOSED rail be hidden from a11y/focus —
+  // on desktop the collapsed strip keeps its expand button reachable.
+  const mq = (q) => typeof window !== "undefined" && window.matchMedia(q).matches;
+  const [leftDrawer, setLeftDrawer] = useState(() => mq("(max-width:820px)"));
+  const [rightDrawer, setRightDrawer] = useState(() => mq("(max-width:1100px)"));
+  useEffect(() => {
+    const ml = window.matchMedia("(max-width:820px)");
+    const mr = window.matchMedia("(max-width:1100px)");
+    const ul = () => setLeftDrawer(ml.matches);
+    const ur = () => setRightDrawer(mr.matches);
+    ml.addEventListener("change", ul); mr.addEventListener("change", ur);
+    return () => { ml.removeEventListener("change", ul); mr.removeEventListener("change", ur); };
+  }, []);
+  const leftHidden = leftDrawer && !leftOpen;     // off-screen, closed
+  const rightHidden = rightDrawer && !rightOpen;
+
   return (
     <div className={"shell" + (leftOpen ? " left-open" : "") + (rightOpen ? " right-open" : "")}>
       {/* Slim DAW header: brand, nav, stat chips, kit picker, Progress + rail toggles. */}
@@ -81,7 +98,12 @@ export default function App() {
         }}
       >
         {/* LEFT RAIL — collapsible library */}
-        <aside className={"rail leftrail" + (leftOpen ? "" : " is-collapsed")}>
+        <aside
+          className={"rail leftrail" + (leftOpen ? "" : " is-collapsed")}
+          aria-hidden={leftHidden || undefined}
+          inert={leftHidden ? "" : undefined}
+          tabIndex={leftHidden ? -1 : undefined}
+        >
           <div className="rail-head">
             <span className="rail-title">Library</span>
             <button
@@ -104,7 +126,12 @@ export default function App() {
         </main>
 
         {/* RIGHT RAIL — collapsible inspector (MIDI coach) */}
-        <aside className={"rail rightrail" + (rightOpen ? "" : " is-collapsed")}>
+        <aside
+          className={"rail rightrail" + (rightOpen ? "" : " is-collapsed")}
+          aria-hidden={rightHidden || undefined}
+          inert={rightHidden ? "" : undefined}
+          tabIndex={rightHidden ? -1 : undefined}
+        >
           <div className="rail-head">
             <button
               className="rail-btn"

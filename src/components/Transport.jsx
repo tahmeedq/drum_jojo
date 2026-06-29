@@ -62,10 +62,6 @@ export default function Transport() {
             <button className={"mini amber" + (S.guideMute ? " on" : "")} onClick={() => toggleS("guideMute")} title="Mute the kit, keep the click">Metronome Only</button>
             <button className={"mini blue" + (S.trade ? " on" : "")} onClick={() => toggleS("trade")} title="Alternate demo bar / your bar">Trade: Demo↔You</button>
           </div>
-
-          <div className="toolgroup voices-group">
-            <MuteRow />
-          </div>
         </div>
       )}
 
@@ -138,6 +134,9 @@ export default function Transport() {
         <button className={"tp-more" + (more ? " on" : "")} onClick={() => setMore(m => !m)}
           title="More practice tools" aria-label="Toggle practice tools">⋯</button>
       </div>
+
+      {/* Per-voice mute is a high-frequency practice action — always visible. */}
+      <MuteRow />
     </section>
   );
 }
