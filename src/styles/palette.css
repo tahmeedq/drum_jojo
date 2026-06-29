@@ -1,0 +1,214 @@
+/* ============================================================
+   Command Palette — Raycast/VS Code-style overlay.
+   All colours reference :root tokens from styles.css.
+   ============================================================ */
+
+/* ----- Backdrop ----- */
+.cp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(6, 8, 13, 0.72);
+  backdrop-filter: blur(6px) saturate(1.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: clamp(60px, 12vh, 160px);
+  /* Fade in */
+  animation: cp-fade-in 0.12s ease;
+}
+
+@keyframes cp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ----- Panel ----- */
+.cp-panel {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(480px, 72vh);
+  background: var(--panel-solid);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,.04) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Slide down */
+  animation: cp-slide-in 0.14s cubic-bezier(.2,.8,.4,1);
+}
+
+@keyframes cp-slide-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ----- Search row ----- */
+.cp-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.cp-search-icon {
+  font-size: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.cp-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--txt);
+  font-family: var(--ff);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  caret-color: var(--ember);
+}
+
+.cp-input::placeholder {
+  color: var(--muted2);
+  font-weight: 400;
+}
+
+.cp-kbd {
+  font-family: var(--fm);
+  font-size: 10.5px;
+  color: var(--muted2);
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+  letter-spacing: .5px;
+}
+
+/* ----- Results list ----- */
+.cp-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+  /* Custom scrollbar using design system muted tone */
+}
+
+.cp-list::-webkit-scrollbar { width: 6px; }
+.cp-list::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 6px; }
+.cp-list::-webkit-scrollbar-track { background: transparent; }
+
+/* ----- Empty state ----- */
+.cp-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--muted2);
+  font-size: 13.5px;
+}
+
+/* ----- Group header (section label above a cluster) ----- */
+.cp-group {
+  padding: 6px 16px 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  font-family: var(--fd);
+}
+
+/* ----- Single result row ----- */
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: background 0.08s ease;
+  color: var(--txt);
+  font-family: var(--ff);
+  font-size: 13.5px;
+}
+
+/* Highlighted (keyboard or hover) */
+.cp-item.cp-active {
+  background: rgba(255,255,255,.065);
+}
+
+.cp-item:hover {
+  background: rgba(255,255,255,.045);
+}
+
+.cp-item-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1;
+}
+
+/* Active ember accent on left edge */
+.cp-item.cp-active .cp-item-icon {
+  color: var(--ember);
+}
+
+.cp-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.cp-item-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--muted2);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: var(--fd);
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+/* ----- Footer hint bar ----- */
+.cp-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cp-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted2);
+}
+
+.cp-hint kbd {
+  font-family: var(--fm);
+  font-size: 10px;
+  color: var(--muted);
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  padding: 2px 5px;
+  letter-spacing: .4px;
+}
