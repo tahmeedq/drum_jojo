@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, lazy, Suspense } from "react";
-import { S, COUNT, on } from "../engine/state.js";
+import { S, COUNT, on, emit } from "../engine/state.js";
+import "../styles/loop-section.css";
 import { activeRows, cycleCell, tracksToStrings, blankPattern } from "../engine/core/patterns.js";
 import { ROWS } from "../engine/data/index.js";
 import { store, saveStore } from "../engine/core/store.js";
@@ -61,6 +62,63 @@ export default function Grid() {
     return () => { offTick(); offStop(); offHit(); };
   }, []);
 
+  // ── Loop-section selection ──────────────────────────────────────────────
+  // Hooks must be called unconditionally (before any early return), so these
+  // live above the `if (!p)` guard. Effects guard themselves with `if (!p)`.
+  //
+  // S.loopSel is { start, end } (inclusive step indices) or null.
+  // Local state mirrors S.loopSel so the grid re-renders on changes.
+  const [loopSel, setLoopSel] = useState(() => S.loopSel || null);
+  // dragRef holds the anchor step index while the user is dragging.
+  const dragRef = useRef(null);
+
+  // Clamp or clear a stale selection whenever the pattern's step count changes.
+  // Depends on p?._steps so it re-runs when the pattern is resized or swapped.
+  useEffect(() => {
+    if (!p || !S.loopSel) { if (!p) return; setLoopSel(null); return; }
+    const maxStep = p._steps - 1;
+    if (S.loopSel.start > maxStep) {
+      // Entire selection is beyond the new end — clear it.
+      S.loopSel = null; setLoopSel(null); emit("loopsel", null);
+    } else if (S.loopSel.end > maxStep) {
+      // Clamp the end to the last valid step.
+      const clamped = { start: S.loopSel.start, end: maxStep };
+      S.loopSel = clamped; setLoopSel(clamped); emit("loopsel", clamped);
+    } else {
+      setLoopSel({ ...S.loopSel }); // sync local state in case S was mutated externally
+    }
+  }, [p?._steps]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Release drag tracking when the mouse button goes up anywhere on the page.
+  useEffect(() => {
+    const onUp = () => { dragRef.current = null; };
+    document.addEventListener("mouseup", onUp);
+    return () => document.removeEventListener("mouseup", onUp);
+  }, []);
+
+  /** Begin a drag-select from a beat-header cell. */
+  const startLoopDrag = (step) => {
+    dragRef.current = step;
+    const sel = { start: step, end: step };
+    S.loopSel = sel; setLoopSel(sel); emit("loopsel", sel);
+  };
+
+  /** Extend the current drag as the pointer enters adjacent header cells. */
+  const extendLoopDrag = (step) => {
+    if (dragRef.current === null) return;
+    const anchor = dragRef.current;
+    const sel = anchor <= step
+      ? { start: anchor, end: step }
+      : { start: step, end: anchor };
+    S.loopSel = sel; setLoopSel(sel); emit("loopsel", sel);
+  };
+
+  /** Clear the loop selection entirely. */
+  const clearLoopSel = () => {
+    S.loopSel = null; setLoopSel(null); emit("loopsel", null);
+  };
+  // ───────────────────────────────────────────────────────────────────────
+
   if (!p) return null;
   const { _steps: steps, sub } = p;
   const cmap = COUNT[sub] || null;
@@ -99,8 +157,36 @@ export default function Grid() {
               {Array.from({ length: steps }, (_, s) => {
                 const within = s % sub;
                 const alt = Math.floor(s / sub) % 2 === 1 ? " bg-alt" : "";
-                return <th key={s} data-step={s} className={"beatnum" + (within === 0 ? " beatstart" : "") + alt}>
-                  {within === 0 ? Math.floor(s / sub) + 1 : ""}</th>;
+                const inLoop = loopSel && s >= loopSel.start && s <= loopSel.end;
+                return (
+                  <th key={s} data-step={s}
+                    className={"beatnum" + (within === 0 ? " beatstart" : "") + alt + (inLoop ? " loop-col" : "")}
+                    onMouseDown={(e) => { e.preventDefault(); startLoopDrag(s); }}
+                    onMouseEnter={() => extendLoopDrag(s)}>
+                    {within === 0 ? Math.floor(s / sub) + 1 : ""}
+                  </th>
+                );
+              })}
+            </tr>
+
+            {/* Loop-section indicator strip — drag the beat header above to set the loop range */}
+            <tr className="loop-sel-row">
+              <td className="rowlabel loop-sel-label">
+                {loopSel
+                  ? <button className="loop-clear" onClick={clearLoopSel}>⟲ Clear</button>
+                  : <span className="loop-sel-hint">drag beats↑ to loop</span>}
+              </td>
+              {Array.from({ length: steps }, (_, s) => {
+                const active = loopSel && s >= loopSel.start && s <= loopSel.end;
+                const capL   = active && s === loopSel.start;
+                const capR   = active && s === loopSel.end;
+                return (
+                  <td key={s}
+                    className={"loop-sel-cell"
+                      + (active ? " loop-active" : "")
+                      + (capL ? " loop-cap-l" : "")
+                      + (capR ? " loop-cap-r" : "")} />
+                );
               })}
             </tr>
 
@@ -139,10 +225,13 @@ export default function Grid() {
                   {Array.from({ length: steps }, (_, s) => {
                     const v = arr[s] || 0;
                     const alt = Math.floor(s / sub) % 2 === 1 ? " bg-alt" : "";
+                    const inLoop = loopSel && s >= loopSel.start && s <= loopSel.end;
                     const cls = ["cell",
                       s % sub === 0 ? "beatstart" : "",
                       v === 1 ? "on" : v === 2 ? "on accent" : v === 3 ? "on ghost" : "",
-                      S.editMode ? "editable" : "", alt].join(" ").replace(/\s+/g, " ").trim();
+                      S.editMode ? "editable" : "",
+                      inLoop ? "loop-col" : "",
+                      alt].join(" ").replace(/\s+/g, " ").trim();
                     const orn = row.id === "snare" && p._orn ? p._orn[s] : null;
                     return (
                       <td key={s} data-step={s} data-row={row.id} className={cls}

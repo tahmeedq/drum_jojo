@@ -1,0 +1,92 @@
+/* ============================================================
+   Loop-section selection UI.
+   All colors reference :root CSS custom properties; no hex literals.
+   ============================================================ */
+
+/* Drag-to-select cursor + selection-prevention on the draggable beat-number
+   header cells only — excludes the static "Beat" row-label header (.rowlabel),
+   which has no drag handler. */
+.grid th.beatnum:not(.rowlabel) {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* Selected columns — beat header */
+.grid th.beatnum.loop-col {
+  background: color-mix(in srgb, var(--cyan) 18%, transparent);
+  color: var(--cyan);
+}
+
+/* Selected columns — every data cell in the range */
+.grid td.loop-col {
+  background: color-mix(in srgb, var(--cyan) 7%, transparent);
+}
+
+/* ---- Thin indicator strip below the beat header ---- */
+.loop-sel-row td {
+  height: 5px;
+  padding: 0;
+  /* no bottom border so it reads as part of the header area */
+  border-bottom: none;
+}
+
+.loop-sel-row .loop-sel-cell {
+  background: transparent;
+  transition: background 0.12s;
+}
+
+.loop-sel-row .loop-sel-cell.loop-active {
+  background: color-mix(in srgb, var(--cyan) 65%, transparent);
+}
+
+/* Rounded end-caps on the first / last active cell in the strip */
+.loop-sel-row .loop-sel-cell.loop-cap-l {
+  border-radius: var(--r-xs) 0 0 var(--r-xs);
+}
+.loop-sel-row .loop-sel-cell.loop-cap-r {
+  border-radius: 0 var(--r-xs) var(--r-xs) 0;
+}
+/* Single-step selection is fully rounded */
+.loop-sel-row .loop-sel-cell.loop-cap-l.loop-cap-r {
+  border-radius: var(--r-xs);
+}
+
+/* Row-label cell in the indicator strip */
+.loop-sel-label {
+  padding: 0 4px;
+  text-align: right;
+  vertical-align: middle;
+}
+
+/* "⟲ Clear" button shown when a selection is active */
+.loop-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+  border-radius: var(--r-xs);
+  padding: 1px 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.loop-clear:hover {
+  background: color-mix(in srgb, var(--cyan) 20%, transparent);
+  border-color: var(--cyan);
+}
+
+/* Dim hint text shown when no selection is active */
+.loop-sel-hint {
+  font-size: 8.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-style: italic;
+  letter-spacing: 0.1px;
+}

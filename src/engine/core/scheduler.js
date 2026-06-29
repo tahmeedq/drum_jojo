@@ -21,6 +21,10 @@ import { store } from "./store.js";
 const lookahead = 25, scheduleAhead = 0.12;
 let timer = null, nextNoteTime = 0, countLeft = 0;
 let sessionStart = 0;
+// Steps played since the last true bar boundary. Used only by loop-section
+// mode (where stepIdx is constrained to a sub-bar range and can no longer
+// signal a bar) to gate per-bar logic — rep counter, trainer ramp, trade.
+let stepsSinceBar = 0;
 
 const stepDur = () => (60 / S.bpm) / S.current.sub;
 const hum = () => 0.92 + Math.random() * 0.14;
@@ -124,13 +128,37 @@ function loop() {
       scheduleCount(4 - countLeft, nextNoteTime);
       nextNoteTime += 60 / S.bpm; countLeft--;
       if (countLeft === 0) {
-        S.stepIdx = 0; S.barCount = 0;
+        // When a loop section is active, begin at the loop start point.
+        const ls = S.loopSel;
+        S.stepIdx = (ls && S.mode === "pattern" && ls.start < S.current._steps)
+          ? Math.min(ls.start, S.current._steps - 1) : 0;
+        S.barCount = 0; stepsSinceBar = 0;
         afterAudio(nextNoteTime, () => { emit("count", { n: 0 }); emit("banner"); });
       }
     } else {
       scheduleStep(S.stepIdx, nextNoteTime);
       nextNoteTime += stepDur(); S.stepIdx++;
-      if (S.stepIdx >= S.current._steps) {
+
+      // Loop-section mode: when S.loopSel is set in pattern mode, wrap the
+      // playhead at the loop end back to the loop start instead of bar end.
+      // In song mode or when loopSel is null, fall through to the normal path.
+      const ls = S.loopSel;
+      if (ls && S.mode === "pattern") {
+        const maxStep = S.current._steps - 1;
+        // Clamp against stale selections (e.g. after a pattern resize).
+        const loopStart = Math.max(0, Math.min(ls.start, maxStep));
+        const loopEnd   = Math.max(loopStart, Math.min(ls.end, maxStep));
+        // A sub-bar loop wraps several times per musical bar, so bar-level
+        // logic must fire on a TRUE bar boundary — every _steps played —
+        // not on each wrap. (A full-bar loop hits this exactly once per pass,
+        // matching the normal non-loop behavior.)
+        stepsSinceBar++;
+        if (stepsSinceBar >= S.current._steps) {
+          stepsSinceBar = 0;
+          onBarComplete(nextNoteTime);   // keeps rep/trainer/trade counting intact
+        }
+        if (S.stepIdx > loopEnd) S.stepIdx = loopStart;
+      } else if (S.stepIdx >= S.current._steps) {
         S.stepIdx = 0;
         const tAt = nextNoteTime;
         if (S.mode === "song") {
@@ -157,7 +185,11 @@ export function play() {
   S.playing = true; S.repCount = 0;
   sessionStart = performance.now();
   if (S.mode === "song") { S.songIdx = 0; S.barsPlayed = 0; setSongPart(0); emit("partChanged", { idx: 0, live: true }); }
-  S.stepIdx = 0; S.barCount = 0; countLeft = S.countIn ? 4 : 0;
+  // When a loop section is selected, start playback at the loop start.
+  const ls = S.loopSel;
+  S.stepIdx = (ls && S.mode === "pattern" && S.current && ls.start < S.current._steps)
+    ? Math.min(ls.start, S.current._steps - 1) : 0;
+  S.barCount = 0; stepsSinceBar = 0; countLeft = S.countIn ? 4 : 0;
   emit("transport", { playing: true, countIn: S.countIn });
   emit("banner");
   nextNoteTime = Audio.now() + 0.12;
