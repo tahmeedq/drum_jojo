@@ -8,9 +8,12 @@
      import { store } from "./engine/core/store.js";
      {!store.onboarded && <Onboarding onClose={...} />}
 
-   On finish OR skip:  store.onboarded = true  (via saveStore)
+   On finish OR Skip:  store.onboarded = true  (via saveStore)
+   On Escape / backdrop click:  dismissed for this session only
+     (onClose without persisting) so a stray click never permanently
+     marks the user as onboarded.
    ============================================================ */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { store, saveStore } from "../engine/core/store.js";
 import "../styles/onboarding.css";
 
@@ -60,22 +63,67 @@ export default function Onboarding({ onClose }) {
   const [step, setStep] = useState(0);
   const total = STEPS.length;
   const isLast = step === total - 1;
+  const dialogRef = useRef(null);
 
-  /* Mark onboarded in the persistent store, then call the parent's onClose. */
+  /* Mark onboarded in the persistent store, then call the parent's onClose.
+     Used by Skip and the final "Get started" — an explicit user decision. */
   const finish = () => {
     store.onboarded = true;
     saveStore();
     onClose();
   };
 
-  /* Clicking the backdrop or Skip also counts as "done". */
-  const skip = finish;
+  /* Dismiss for this session WITHOUT persisting — used by Escape and a
+     backdrop click so a stray outside click never permanently marks the
+     user as onboarded (it will reappear next run). */
+  const dismiss = () => onClose();
+
+  /* Focus management + Escape-to-dismiss.
+     On mount: remember the previously-focused element, move focus into the
+     dialog. On unmount: restore focus and remove the keydown listener. */
+  useEffect(() => {
+    const prevFocus = document.activeElement;
+    dialogRef.current?.focus();
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        dismiss();
+        return;
+      }
+      // Light focus trap: keep Tab cycling among the dialog's buttons.
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll("button");
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      // Restore focus to whatever was focused before the overlay opened.
+      if (prevFocus instanceof HTMLElement) prevFocus.focus();
+    };
+    // Empty deps: dismiss/onClose are stable enough for a one-shot overlay.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    /* Clicking outside the card skips/closes */
-    <div className="modal-backdrop ob-backdrop" onClick={skip}>
+    /* Clicking outside the card dismisses for this session (no persist) */
+    <div className="modal-backdrop" onClick={dismiss}>
       <div
         className="modal ob-modal"
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={`Onboarding, step ${step + 1} of ${total}: ${STEPS[step].title}`}

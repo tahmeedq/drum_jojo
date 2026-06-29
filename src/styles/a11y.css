@@ -58,9 +58,11 @@
   border-radius: 0;
 }
 
-/* dynbad modifier — dashed outline flags bad dynamics */
+/* dynbad modifier — dashed warn-colored outline flags bad dynamics.
+   Explicit color: .tick sets no `color`, so currentColor would resolve
+   to the light document text rather than reading as a dynamics flag. */
 .tick.dynbad {
-  outline: 1.5px dashed currentColor;
+  outline: 1.5px dashed var(--warn);
   outline-offset: 1px;
 }
 
