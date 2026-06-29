@@ -3,8 +3,10 @@
    All colors reference :root CSS custom properties; no hex literals.
    ============================================================ */
 
-/* Drag-to-select cursor + selection-prevention on beat header cells */
-.grid th.beatnum {
+/* Drag-to-select cursor + selection-prevention on the draggable beat-number
+   header cells only — excludes the static "Beat" row-label header (.rowlabel),
+   which has no drag handler. */
+.grid th.beatnum:not(.rowlabel) {
   cursor: col-resize;
   user-select: none;
 }
