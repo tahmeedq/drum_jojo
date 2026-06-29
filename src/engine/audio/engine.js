@@ -5,6 +5,7 @@
    ============================================================ */
 export const Audio = {
   ctx: null, master: null, bus: null, conv: null, revGain: null, comp: null,
+  kitGain: null, clickGain: null, monitorGain: null,
 
   init() {
     if (this.ctx) return;
@@ -29,6 +30,17 @@ export const Audio = {
     const revGain = this.revGain = ctx.createGain();
     revGain.gain.value = 0.13;
     bus.connect(conv); conv.connect(revGain); revGain.connect(master);
+
+    // Three independently-controllable sub-buses so the player can balance
+    // groove playback, the metronome and their own (MIDI-in) hits.
+    //  • kit + monitor go through `bus` → they share the room reverb + glue.
+    //  • the click is routed dry, straight to master, so it always cuts
+    //    through the mix instead of getting buried in playback + monitor.
+    const kitGain = this.kitGain = ctx.createGain(); kitGain.gain.value = 0.85;
+    const monitorGain = this.monitorGain = ctx.createGain(); monitorGain.gain.value = 0.8;
+    kitGain.connect(bus); monitorGain.connect(bus);
+    const clickGain = this.clickGain = ctx.createGain(); clickGain.gain.value = 0.9 * 1.6;
+    clickGain.connect(master);
   },
 
   makeIR(dur, decay) {
@@ -45,6 +57,12 @@ export const Audio = {
   now() { return this.ctx ? this.ctx.currentTime : 0; },
   setVolume(v) { if (this.master) this.master.gain.value = v / 100 * 1.05; },
   setReverb(v) { if (this.revGain) this.revGain.gain.value = v; },
+
+  // Per-source volumes (0..100). The click gets extra headroom (×1.6) because
+  // its synth peak is low and it needs to punch through a busy mix.
+  setKitVolume(v)     { if (this.kitGain)     this.kitGain.gain.value     = v / 100; },
+  setClickVolume(v)   { if (this.clickGain)   this.clickGain.gain.value   = v / 100 * 1.6; },
+  setMonitorVolume(v) { if (this.monitorGain) this.monitorGain.gain.value = v / 100; },
 
   /* Convert a DOMHighResTimeStamp (performance.now ms) to AudioContext
      seconds — the link between Web MIDI event times and audio time. */

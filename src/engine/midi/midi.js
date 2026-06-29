@@ -12,6 +12,7 @@
 import { Audio } from "../audio/engine.js";
 import { trigger } from "../audio/voices.js";
 import { GM_DRUM_MAP } from "../data/index.js";
+import { store, saveStore } from "../core/store.js";
 import { S, emit, on } from "../state.js";
 
 const WINDOW = 0.18;          // max match distance, seconds
@@ -74,7 +75,7 @@ export const MIDI = {
     if ((status & 0xf0) !== 0x90 || vel === 0) return;   // note-on only
     const id = GM_DRUM_MAP[note];
     const tC = Audio.perfToCtx(msg.timeStamp || performance.now());
-    if (S.midiMonitor && id) trigger(id, Audio.now() + 0.001, Math.min(1.4, vel / 100));
+    if (S.midiMonitor && id) trigger(id, Audio.now() + 0.001, Math.min(1.4, vel / 100), "monitor");
     this._grade(id, tC, vel);
   },
 
@@ -89,7 +90,9 @@ export const MIDI = {
     if (!best) { emit("midiHit", { id, deltaMs: null, rating: "extra", matched: false }); return; }
 
     best.used = true;
-    const deltaMs = (tC - best.time) * 1000, aMs = Math.abs(deltaMs);
+    // Subtract the calibrated latency offset so a physically on-time hit grades
+    // at ~0ms instead of dragging by the fixed input/output delay.
+    const deltaMs = (tC - best.time) * 1000 - store.midiOffset, aMs = Math.abs(deltaMs);
     const rating = aMs <= PERFECT ? "perfect" : aMs <= GOOD ? "good" : "off";
     const dynOk = dynamicsOk(best.v, midiVel);
     totalMatched++; if (rating !== "off") totalInGood++; if (dynOk) totalDynOk++;
@@ -110,5 +113,24 @@ export const MIDI = {
   reset() {
     expected = []; recent.length = 0; totalMatched = 0; totalInGood = 0; totalDynOk = 0;
     emit("timingStats", { mean: 0, spread: 0, acc: 0, dynAcc: 0, samples: 0 });
+  },
+
+  // Fold the current average offset into the calibration so your steady
+  // playing re-centres on 0. Needs a few samples to be meaningful.
+  calibrate() {
+    const n = recent.length;
+    if (!n) return store.midiOffset;
+    const mean = recent.reduce((a, b) => a + b, 0) / n;
+    store.midiOffset = Math.round(store.midiOffset + mean);
+    saveStore();
+    this.reset();
+    emit("midiCal", { offset: store.midiOffset });
+    return store.midiOffset;
+  },
+
+  setOffset(ms) {
+    store.midiOffset = Math.round(ms);
+    saveStore();
+    emit("midiCal", { offset: store.midiOffset });
   },
 };

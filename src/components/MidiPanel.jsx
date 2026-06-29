@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { S, on } from "../engine/state.js";
 import { MIDI } from "../engine/midi/midi.js";
+import { Audio } from "../engine/audio/engine.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { useForceRender } from "../hooks/useBus.js";
 
@@ -16,6 +17,7 @@ export default function MidiPanel() {
     MIDI.supported ? "Connect an electronic kit to grade your timing in real time."
                    : "Web MIDI isn't available in this browser — try Chrome or Edge.");
   const [stats, setStats] = useState({ samples: 0 });
+  const [offset, setOffset] = useState(store.midiOffset);
 
   useEffect(() => {
     const offState = on("midiState", (d) => {
@@ -41,13 +43,14 @@ export default function MidiPanel() {
       ticksRef.current.appendChild(t);
       setTimeout(() => t.remove(), 1400);
     });
-    return () => { offState(); offStats(); offHit(); };
+    const offCal = on("midiCal", (d) => setOffset(d.offset));
+    return () => { offState(); offStats(); offHit(); offCal(); };
   }, []);
 
   const connect = async () => {
     if (S.midiOn) { MIDI.disable(); return; }
     setStatus("Requesting MIDI access…");
-    try { await MIDI.enable(); }
+    try { await MIDI.enable(); Audio.setMonitorVolume(store.volMidi); }
     catch (err) { setStatus(err.message); }
   };
 
@@ -82,11 +85,32 @@ export default function MidiPanel() {
         <Readout val={stats.samples ? (stats.dynAcc ?? 0) + "%" : "—"} lbl="Dynamics" />
       </div>
 
+      <div className="midi-cal">
+        <div className="cal-head">
+          <span className="cal-lbl">Latency calibration</span>
+          <span className="cal-val">{offset > 0 ? "+" : ""}{offset} ms</span>
+        </div>
+        <div className="cal-row">
+          <input type="range" min="-40" max="120" value={offset}
+            onChange={(e) => { setOffset(+e.target.value); MIDI.setOffset(+e.target.value); }} />
+          <button className="mini" title="Play a steady groove for a few bars, then click to zero your average"
+            disabled={!stats.samples} onClick={() => MIDI.calibrate()}>
+            🎯 Auto-zero
+          </button>
+        </div>
+        <div className="cal-hint">Higher = compensates for more input/output delay. Play steadily, then Auto-zero.</div>
+      </div>
+
       <div className="midi-ctrls">
         <button className={"mini" + (S.midiMonitor ? " on" : "")}
           onClick={() => { S.midiMonitor = !S.midiMonitor; store.midiMonitor = S.midiMonitor; saveStore(); rerender(); }}>
           🔈 Hear my hits
         </button>
+        <label className="midi-vol" title="Volume of your own hits">
+          <span>🎚</span>
+          <input type="range" min="0" max="100" defaultValue={store.volMidi}
+            onChange={(e) => { store.volMidi = +e.target.value; Audio.setMonitorVolume(store.volMidi); saveStore(); }} />
+        </label>
         <button className={"mini" + (S.gradeDynamics ? " on" : "")}
           onClick={() => { S.gradeDynamics = !S.gradeDynamics; rerender(); }} title="Grade accent / ghost velocity">
           🎚 Grade dynamics

@@ -10,6 +10,14 @@ import { useBus, useForceRender, useRenderOn } from "../hooks/useBus.js";
 const labelFor = (id) => (ROWS.find(r => r.id === id) || {}).label || id;
 const PRESETS = [60, 80, 100, 120, 140, 160];
 
+// Push every stored volume into its gain stage (called on play + slider edits).
+function applyMix() {
+  Audio.setVolume(store.vol);
+  Audio.setKitVolume(store.volKit);
+  Audio.setClickVolume(store.volClick);
+  Audio.setMonitorVolume(store.volMidi);
+}
+
 export default function Transport() {
   useRenderOn(["view"]);
   const rerender = useForceRender();
@@ -19,7 +27,7 @@ export default function Transport() {
 
   useBus("bpm", (d) => setBpmState(d.bpm));
   useBus("transport", (d) => {
-    if (d.playing) { setPlay({ playing: true, label: S.countIn ? "4" : "■" }); Audio.setVolume(store.vol); setRep(0); }
+    if (d.playing) { setPlay({ playing: true, label: S.countIn ? "4" : "■" }); applyMix(); setRep(0); }
     else setPlay({ playing: false, label: "▶" });
   });
   useBus("count", (d) => setPlay(p => ({ ...p, label: d.n > 0 ? String(d.n) : "■" })));
@@ -61,10 +69,13 @@ export default function Transport() {
           </div>
         </div>
 
-        <div className="ctl">
-          <label>Volume</label>
-          <input type="range" min="0" max="100" defaultValue={store.vol}
-            onChange={(e) => { store.vol = +e.target.value; Audio.setVolume(store.vol); saveStore(); }} />
+        <div className="ctl mixer-ctl">
+          <label>Mix · Volume</label>
+          <div className="mixer">
+            <MixSlider lbl="Master" k="vol" apply={(v) => Audio.setVolume(v)} />
+            <MixSlider lbl="Kit" k="volKit" apply={(v) => Audio.setKitVolume(v)} />
+            <MixSlider lbl="Click" k="volClick" apply={(v) => Audio.setClickVolume(v)} />
+          </div>
         </div>
       </div>
 
@@ -113,6 +124,18 @@ export default function Transport() {
 
       <MuteRow />
     </section>
+  );
+}
+
+function MixSlider({ lbl, k, apply }) {
+  const [v, setV] = useState(store[k]);
+  return (
+    <div className="mixrow">
+      <span className="mixlbl">{lbl}</span>
+      <input type="range" min="0" max="100" value={v}
+        onChange={(e) => { const n = +e.target.value; setV(n); store[k] = n; apply(n); saveStore(); }} />
+      <span className="mixval">{v}</span>
+    </div>
   );
 }
 

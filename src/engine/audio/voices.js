@@ -11,6 +11,12 @@ const BUFFERS = {};            // current kit's decoded buffers by voice id
 let currentKit = null, samplesReady = false, loadingKit = null, noiseBuf = null;
 const BASE = import.meta.env.BASE_URL || "/";
 
+// Output bus for the next note(s) created — set by trigger() before it builds
+// any nodes (always synchronous, so concurrent routes never cross). Falls back
+// to the shared bus until the engine has built its sub-buses.
+let routeGain = null;
+const out = () => routeGain || Audio.kitGain || Audio.bus;
+
 // Sampled cymbal overrides (CC0, Versilian VCSL). No kit ships these, so
 // they load once and play on top of any kit, ahead of the synth fallback.
 const CYMBALS = {};
@@ -81,7 +87,7 @@ function tone(type, f, t, dur, peak, glide, gt) {
   g.gain.setValueAtTime(0.0001, t);
   g.gain.linearRampToValueAtTime(peak, t + 0.001);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(Audio.bus); o.start(t); o.stop(t + dur + 0.05);
+  o.connect(g); g.connect(out()); o.start(t); o.stop(t + dur + 0.05);
 }
 function nz(t, dur, peak, type, freq, q) {
   const ctx = Audio.ctx, n = ctx.createBufferSource(); n.buffer = getNoise();
@@ -90,7 +96,7 @@ function nz(t, dur, peak, type, freq, q) {
   g.gain.setValueAtTime(0.0001, t);
   g.gain.linearRampToValueAtTime(peak, t + 0.001);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  n.connect(f); f.connect(g); g.connect(Audio.bus); n.start(t); n.stop(t + dur + 0.05);
+  n.connect(f); f.connect(g); g.connect(out()); n.start(t); n.stop(t + dur + 0.05);
 }
 
 // Inharmonic square-oscillator bank → the body of a metallic cymbal.
@@ -99,7 +105,7 @@ function metal(t, vel, fund, decay, hpf, bpf, level, attack = 0.0015) {
   const ctx = Audio.ctx;
   const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = hpf;
   const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = bpf; bp.Q.value = 0.7;
-  hp.connect(bp); bp.connect(Audio.bus);
+  hp.connect(bp); bp.connect(out());
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(Math.max(0.0002, level * vel), t + attack);
@@ -135,11 +141,14 @@ function playBuffer(buf, t, vel, trim = 1) {
   const s = Audio.ctx.createBufferSource(); s.buffer = buf;
   s.playbackRate.value = 1 + (Math.random() * 0.03 - 0.015);
   const g = Audio.ctx.createGain(); g.gain.value = Math.min(1.6, vel) * trim;
-  s.connect(g); g.connect(Audio.bus); s.start(t);
+  s.connect(g); g.connect(out()); s.start(t);
 }
 
-export function trigger(id, t, vel) {
-  if (id === "click") { Synth.click(t, vel); return; }
+// route: "kit" (default playback) | "monitor" (player's own MIDI-in hits).
+// The metronome is auto-routed to its own dry bus regardless of route.
+export function trigger(id, t, vel, route = "kit") {
+  if (id === "click") { routeGain = Audio.clickGain; Synth.click(t, vel); return; }
+  routeGain = route === "monitor" ? Audio.monitorGain : Audio.kitGain;
   const cy = CYMBAL_SRC[id];                       // sampled cymbal override?
   if (cy && CYMBALS[id]) { playBuffer(CYMBALS[id], t, vel, cy[1]); return; }
   if (BUFFERS[id]) { playBuffer(BUFFERS[id], t, vel); return; }

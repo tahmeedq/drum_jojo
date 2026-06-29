@@ -7,7 +7,9 @@ const KEY = "drumdojo.v3";
 
 export const store = {
   done: {}, vol: 85, reverb: 0.13,
+  volKit: 85, volClick: 90, volMidi: 80,   // per-source mixer (0..100)
   midiMonitor: true,
+  midiOffset: 0,                           // input+output latency comp, ms (subtracted from each hit)
   swing: 0,
   kit: "muldjord",
 
