@@ -24,6 +24,7 @@ export default function Transport() {
   const [bpm, setBpmState] = useState(S.bpm);
   const [play, setPlay] = useState({ playing: false, label: "▶" });
   const [rep, setRep] = useState(0);
+  const [more, setMore] = useState(false);   // secondary-tools drawer
 
   useBus("bpm", (d) => setBpmState(d.bpm));
   useBus("transport", (d) => {
@@ -41,13 +42,36 @@ export default function Transport() {
 
   return (
     <section className="transport">
-      <div className="transport-main">
+      {/* Secondary practice tools live in an expandable drawer above the slim bar. */}
+      {more && (
+        <div className="transport-drawer">
+          <div className="toolgroup">
+            <span className="toollabel">Speed Trainer</span>
+            <button className={"mini" + (S.trainer ? " on" : "")} onClick={() => toggleS("trainer")} title="Raise tempo each loop">Auto-tempo</button>
+            <select className="dropdown" defaultValue={S.trainerInc} onChange={(e) => { S.trainerInc = +e.target.value; }}>
+              {[2, 4, 6, 10].map(n => <option key={n} value={n}>+{n} bpm</option>)}
+            </select>
+            <select className="dropdown" defaultValue={S.trainerTarget} onChange={(e) => { S.trainerTarget = +e.target.value; }}>
+              <option value="0">no target</option>
+              {[100, 120, 140, 160, 180, 200].map(n => <option key={n} value={n}>→ {n} bpm</option>)}
+            </select>
+          </div>
+
+          <div className="toolgroup">
+            <span className="toollabel">Practice</span>
+            <button className={"mini amber" + (S.guideMute ? " on" : "")} onClick={() => toggleS("guideMute")} title="Mute the kit, keep the click">Metronome Only</button>
+            <button className={"mini blue" + (S.trade ? " on" : "")} onClick={() => toggleS("trade")} title="Alternate demo bar / your bar">Trade: Demo↔You</button>
+          </div>
+        </div>
+      )}
+
+      <div className="transport-bar">
         <button className={"play" + (play.playing ? " on" : "")} onClick={toggle} title="Play / Stop (Space)">
           {play.label}
         </button>
 
         <div className="ctl tempo-ctl">
-          <label>Tempo · BPM</label>
+          <label>BPM</label>
           <div className="bpmrow">
             <input type="number" min="30" max="280" value={bpm}
               onChange={(e) => setBpm(e.target.value)} />
@@ -56,42 +80,26 @@ export default function Transport() {
           </div>
           <div className="presets">
             {PRESETS.map(b => <button key={b} onClick={() => setBpm(b)}>{b}</button>)}
-            <button className="tap" onClick={tap} title="Tap tempo (T)">👆 Tap</button>
+            <button className="tap" onClick={tap} title="Tap tempo (T)">👆</button>
           </div>
         </div>
 
-        <div className="ctl">
-          <label>Feel · Swing</label>
-          <div className="swingrow">
-            <input type="range" min="0" max="60" value={Math.round(S.swing * 100)}
-              onChange={(e) => { S.swing = +e.target.value / 100; store.swing = S.swing; saveStore(); rerender(); }} />
-            <span className="swingval">{Math.round(S.swing * 100)}%</span>
-          </div>
-        </div>
+        <div className="tp-sep" />
 
-        <div className="ctl mixer-ctl">
-          <label>Mix · Volume</label>
-          <div className="mixer">
-            <MixSlider lbl="Master" k="vol" apply={(v) => Audio.setVolume(v)} />
-            <MixSlider lbl="Kit" k="volKit" apply={(v) => Audio.setKitVolume(v)} />
-            <MixSlider lbl="Click" k="volClick" apply={(v) => Audio.setClickVolume(v)} />
-          </div>
-        </div>
-      </div>
-
-      <div className="transport-tools">
-        <div className="toolgroup">
-          <span className="toollabel">Metronome</span>
+        <div className="tp-group">
+          <span className="tp-label">Metro</span>
           <button className={"mini" + (S.click ? " on" : "")} onClick={() => toggleS("click")}>Click</button>
           <select className="dropdown" defaultValue={S.clickRes} onChange={(e) => { S.clickRes = e.target.value; }}>
-            <option value="beat">on Beats</option>
-            <option value="all">on Subdivisions</option>
+            <option value="beat">Beats</option>
+            <option value="all">Subdiv</option>
           </select>
-          <button className={"mini" + (S.countIn ? " on" : "")} onClick={() => toggleS("countIn")}>Count-in</button>
+          <button className={"mini" + (S.countIn ? " on" : "")} onClick={() => toggleS("countIn")} title="Count-in">Count-in</button>
         </div>
 
-        <div className="toolgroup">
-          <span className="toollabel">Loop</span>
+        <div className="tp-sep" />
+
+        <div className="tp-group">
+          <span className="tp-label">Loop</span>
           <button className={"mini" + (S.loop ? " on" : "")} onClick={() => toggleS("loop")}>Loop</button>
           <select className="dropdown" defaultValue={S.loopBars} onChange={(e) => { S.loopBars = +e.target.value; }}>
             {[1, 2, 4, 8].map(n => <option key={n} value={n}>{n} bar{n > 1 ? "s" : ""}</option>)}
@@ -103,25 +111,31 @@ export default function Transport() {
           {play.playing && <span className="repcount">rep {rep}</span>}
         </div>
 
-        <div className="toolgroup">
-          <span className="toollabel">Speed Trainer</span>
-          <button className={"mini" + (S.trainer ? " on" : "")} onClick={() => toggleS("trainer")} title="Raise tempo each loop">Auto-tempo</button>
-          <select className="dropdown" defaultValue={S.trainerInc} onChange={(e) => { S.trainerInc = +e.target.value; }}>
-            {[2, 4, 6, 10].map(n => <option key={n} value={n}>+{n} bpm</option>)}
-          </select>
-          <select className="dropdown" defaultValue={S.trainerTarget} onChange={(e) => { S.trainerTarget = +e.target.value; }}>
-            <option value="0">no target</option>
-            {[100, 120, 140, 160, 180, 200].map(n => <option key={n} value={n}>→ {n} bpm</option>)}
-          </select>
+        <div className="tp-sep" />
+
+        <div className="tp-group swingrow">
+          <span className="tp-label">Swing</span>
+          <input type="range" min="0" max="60" value={Math.round(S.swing * 100)}
+            onChange={(e) => { S.swing = +e.target.value / 100; store.swing = S.swing; saveStore(); rerender(); }} />
+          <span className="swingval">{Math.round(S.swing * 100)}%</span>
         </div>
 
-        <div className="toolgroup">
-          <span className="toollabel">Practice</span>
-          <button className={"mini amber" + (S.guideMute ? " on" : "")} onClick={() => toggleS("guideMute")} title="Mute the kit, keep the click">Metronome Only</button>
-          <button className={"mini blue" + (S.trade ? " on" : "")} onClick={() => toggleS("trade")} title="Alternate demo bar / your bar">Trade: Demo↔You</button>
+        <div className="tp-sep" />
+
+        <div className="ctl mixer-ctl">
+          <span className="tp-label">Mix</span>
+          <div className="mixer">
+            <MixSlider lbl="Mst" k="vol" apply={(v) => Audio.setVolume(v)} />
+            <MixSlider lbl="Kit" k="volKit" apply={(v) => Audio.setKitVolume(v)} />
+            <MixSlider lbl="Clk" k="volClick" apply={(v) => Audio.setClickVolume(v)} />
+          </div>
         </div>
+
+        <button className={"tp-more" + (more ? " on" : "")} onClick={() => setMore(m => !m)}
+          title="More practice tools" aria-label="Toggle practice tools">⋯</button>
       </div>
 
+      {/* Per-voice mute is a high-frequency practice action — always visible. */}
       <MuteRow />
     </section>
   );
