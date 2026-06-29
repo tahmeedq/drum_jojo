@@ -1,0 +1,158 @@
+/* ============================================================
+   Practice Dashboard overlay — progress heatmap, accuracy
+   chart, headline tiles and personal-bests table.
+   Tokens only (see :root in styles.css) — no hardcoded hex.
+   ============================================================ */
+
+/* ---- Overlay shell ---- */
+.db-backdrop{
+  position:fixed;inset:0;z-index:100;
+  background:color-mix(in srgb, var(--bg) 72%, transparent);backdrop-filter:blur(8px);
+  display:grid;place-items:center;padding:20px;
+  animation:dbFade .2s ease;
+}
+@keyframes dbFade{from{opacity:0}to{opacity:1}}
+
+.db-modal{
+  width:min(880px,100%);max-height:calc(100vh - 40px);overflow-y:auto;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--panel-solid) 97%, transparent),
+    color-mix(in srgb, var(--bg2) 97%, transparent));
+  border:1px solid var(--line2);border-radius:22px;
+  padding:24px 28px 28px;box-shadow:var(--shadow);
+  animation:dbRise .28s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes dbRise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+
+/* ---- Header ---- */
+.db-header{
+  display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:2;margin:-24px -28px 6px;padding:18px 28px 14px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--panel-solid) 98%, transparent),
+    transparent);
+  border-bottom:1px solid var(--line);
+}
+.db-title-icon{font-size:22px;line-height:1}
+.db-title{font-family:var(--fd);margin:0;font-size:23px;font-weight:700;letter-spacing:.2px}
+.db-header .modal-x{margin-left:auto}
+
+/* ---- Headline stat tiles ---- */
+.db-tiles{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 4px;
+}
+.db-tile{
+  background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:16px 12px;text-align:center;transition:border-color .15s;
+}
+.db-tile:hover{border-color:var(--line2)}
+.db-tile-icon{font-size:18px;line-height:1;margin-bottom:7px;opacity:.9}
+.db-tile-value{font-family:var(--fd);font-size:26px;font-weight:700;color:var(--txt);line-height:1.1}
+.db-tile-label{
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;
+  color:var(--muted);margin-top:5px;font-weight:600;
+}
+
+/* ---- Sections ---- */
+.db-section{
+  margin-top:22px;padding:18px 20px;border-radius:var(--r-sm);
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--bg2) 60%, transparent),
+    color-mix(in srgb, var(--bg) 40%, transparent));
+  border:1px solid var(--line);
+}
+.db-section-title{
+  font-family:var(--fd);margin:0 0 14px;font-size:14px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+}
+
+/* ---- Heatmap ---- */
+.db-heatmap{overflow-x:auto;padding-bottom:2px}
+.db-heatmap-header{display:flex;align-items:flex-end}
+.db-month-row{position:relative;height:14px}
+.db-month-label{
+  position:absolute;bottom:0;font-size:9.5px;color:var(--muted);
+  font-weight:600;white-space:nowrap;
+}
+.db-heatmap-body{display:flex;gap:4px;margin-top:2px}
+
+/* day-of-week label column */
+.db-dow{display:flex;flex-direction:column;gap:3px;width:14px;flex-shrink:0}
+.db-dow-label{
+  height:12px;font-size:8.5px;line-height:12px;color:transparent;
+  font-weight:600;text-align:center;
+}
+.db-dow-label.db-dow-show{color:var(--muted)}
+
+/* cell grid — column-major (one week per column, Sun→Sat top→bottom) */
+.db-cell-grid{display:grid;grid-auto-flow:column}
+.db-cell{width:12px;height:12px;border-radius:var(--r-xs)}
+
+/* intensity ramp: --line2 (none) → --ember (most) */
+.db-lvl-0{background:var(--line2)}
+.db-lvl-1{background:color-mix(in srgb, var(--ember) 30%, transparent)}
+.db-lvl-2{background:color-mix(in srgb, var(--ember) 52%, transparent)}
+.db-lvl-3{background:color-mix(in srgb, var(--ember) 76%, transparent)}
+.db-lvl-4{background:var(--ember)}
+.db-cell-empty{background:transparent}
+
+.db-heatmap-legend{
+  display:flex;align-items:center;gap:4px;margin-top:12px;justify-content:flex-end;
+}
+.db-legend-lbl{font-size:9.5px;color:var(--muted);margin:0 4px}
+
+/* ---- Accuracy chart ---- */
+.db-acc-chart{display:block;width:100%;height:auto;overflow:visible}
+
+/* ---- Personal-bests table ---- */
+.db-table-wrap{overflow-x:auto;border-radius:var(--r-xs);border:1px solid var(--line)}
+.db-table{border-collapse:collapse;width:100%;min-width:460px;font-size:13px}
+.db-table th{
+  text-align:left;padding:10px 14px;font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--muted);font-weight:700;
+  background:var(--bg2);border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.db-table td{
+  padding:10px 14px;border-bottom:1px solid var(--line);color:var(--txt);
+  vertical-align:middle;
+}
+.db-table tbody tr:last-child td{border-bottom:none}
+.db-table tbody tr:hover td{background:rgba(255,255,255,.03)}
+
+.db-td-item{
+  font-weight:600;max-width:200px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.db-td-timing{font-family:var(--fm);font-size:12px;color:var(--muted)}
+.db-td-tendency{color:var(--txt);font-weight:700}
+.db-td-bpm{font-family:var(--fm);font-size:12px}
+.db-td-date{font-family:var(--fm);font-size:11.5px;color:var(--muted);white-space:nowrap}
+
+/* accuracy pill */
+.db-acc-pill{
+  display:inline-block;font-family:var(--fd);font-weight:700;font-size:12.5px;
+  padding:3px 9px;border-radius:20px;
+}
+.db-acc-good{color:var(--good);background:color-mix(in srgb, var(--good) 12%, transparent);border:1px solid color-mix(in srgb, var(--good) 40%, transparent)}
+.db-acc-warn{color:var(--warn);background:color-mix(in srgb, var(--warn) 12%, transparent);border:1px solid color-mix(in srgb, var(--warn) 40%, transparent)}
+.db-acc-bad{color:var(--bad);background:color-mix(in srgb, var(--bad) 12%, transparent);border:1px solid color-mix(in srgb, var(--bad) 40%, transparent)}
+
+/* ---- Empty states ---- */
+.db-empty-note{
+  font-size:13px;color:var(--muted);line-height:1.6;margin:0;
+  padding:14px 16px;background:var(--bg2);border:1px solid var(--line);
+  border-radius:var(--r-xs);
+}
+.db-empty-state{text-align:center;padding:44px 24px 36px}
+.db-empty-drum{font-size:52px;line-height:1;margin-bottom:16px;animation:dbBounce 2.4s ease-in-out infinite}
+@keyframes dbBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.db-empty-state h3{font-family:var(--fd);font-size:19px;margin:0 0 10px;color:var(--txt)}
+.db-empty-state p{font-size:13.5px;color:var(--muted);line-height:1.65;max-width:420px;margin:0 auto}
+
+/* ---- Responsive ---- */
+@media(max-width:680px){
+  .db-modal{padding:20px 18px 22px}
+  .db-header{margin:-20px -18px 6px;padding:16px 18px 12px}
+  .db-tiles{grid-template-columns:1fr 1fr}
+  .db-section{padding:14px 14px}
+}
