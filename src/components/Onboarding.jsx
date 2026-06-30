@@ -133,7 +133,7 @@ export default function Onboarding({ onClose }) {
         {/* Header */}
         <div className="modal-head">
           <h3>Welcome to Drum Dojo</h3>
-          <button className="modal-x" onClick={skip} aria-label="Skip onboarding">
+          <button className="modal-x" onClick={finish} aria-label="Skip onboarding">
             ✕
           </button>
         </div>
@@ -169,7 +169,7 @@ export default function Onboarding({ onClose }) {
 
         {/* Navigation */}
         <div className="ob-nav">
-          <button className="btn ob-skip" onClick={skip}>
+          <button className="btn ob-skip" onClick={finish}>
             Skip
           </button>
           <div className="ob-nav-r">
