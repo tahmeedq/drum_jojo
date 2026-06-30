@@ -93,8 +93,22 @@ export default function TopBar({ leftOpen, rightOpen, onToggleLeft, onToggleRigh
 
 function KitPicker({ kit }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);   // fixed-position coords for the menu
   const ref = useRef(null);
+  const btnRef = useRef(null);
   const curId = kit.kit || store.kit || "acoustic";
+
+  // The header has overflow (for horizontal scroll on narrow screens), which
+  // would clip an absolutely-positioned dropdown. So the menu is position:fixed
+  // and anchored to the trigger button's viewport rect, right-aligned to it.
+  const toggle = () => setOpen((o) => {
+    const next = !o;
+    if (next && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: Math.round(r.bottom + 8), right: Math.round(Math.max(8, window.innerWidth - r.right)) });
+    }
+    return next;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -107,13 +121,13 @@ function KitPicker({ kit }) {
 
   return (
     <div className="kitpicker" ref={ref}>
-      <button className="kitpick" title="Change kit" onClick={() => setOpen(o => !o)}>
+      <button ref={btnRef} className="kitpick" title="Change kit" onClick={toggle}>
         <span className={"dot" + (kit.ready ? " ready" : "")} />
         <span className="kitlabel">{kit.label}</span>
         <span className="caret">▾</span>
       </button>
       {open && (
-        <div className="kitmenu">
+        <div className="kitmenu" style={pos ? { top: pos.top, right: pos.right } : undefined}>
           <div className="kitmenu-title">Drum kit</div>
           {KITS.map(k => (
             <button key={k.id} className={"kitopt" + (k.id === curId ? " active" : "")} onClick={() => choose(k.id)}>

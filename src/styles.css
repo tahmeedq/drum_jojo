@@ -103,7 +103,7 @@ input,select,button{font-family:inherit}
 .kitpick .dot.ready{background:var(--good);box-shadow:0 0 10px var(--good)}
 .kitpick .kitlabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kitpick .caret{font-size:9px;opacity:.7;flex:none}
-.kitmenu{position:absolute;top:calc(100% + 8px);right:0;z-index:50;min-width:230px;
+.kitmenu{position:fixed;z-index:80;min-width:230px;
   background:linear-gradient(180deg,rgba(22,28,40,.98),rgba(13,18,27,.98));border:1px solid var(--line2);
   border-radius:14px;box-shadow:var(--shadow);padding:8px;animation:rise .18s ease}
 .kitmenu-title{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700;padding:6px 8px 8px}
