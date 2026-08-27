@@ -1,22 +1,13 @@
 /* ============================================================
-   "Thanks For The Memories" (Fall Out Boy) — drum transcription.
-
-   Read directly from the Rob Ferrell Drum Studio chart
-   (thanks-for-the-memories.pdf, © Rob Ferrell Drum Studio 2016,
-   www.robertferrell.com) by rendering the engraved notation to
-   high-resolution images and reading it system-by-system. Common
-   time (4/4), ~152 BPM. The song's two signature grooves are
-   captured faithfully:
-     • Intro / chorus — straight 8th-note hi-hats over a
-       four-on-the-floor kick (no backbeat), crescendo on the intro.
-     • Verse — quarter-note hi-hats over a syncopated
-       dotted-eighth/sixteenth "gallop" kick; kick-driven.
-   plus the mid-song break where the kit drops out and the build
-   of busy sixteenth kicks that ramps back in. Voice ids mirror
-   src/engine/data/kit.js. Each part is one bar; the arrangement
-   plays them in order as a play-along. Fill bars follow the
-   chart's shapes; exact inner sixteenths on the busiest fills are
-   best-effort reads of the engraving.
+   "Thanks For The Memories" (Fall Out Boy) — full drum transcription.
+   Built directly from thnks-fr-th-mmrs.mid (Standard MIDI File):
+   155 BPM, 4/4 throughout. The drum track uses a custom Guitar-Pro
+   pad map on channel 10; pitches were matched to voices by their
+   rhythmic role (kick four-on-the-floor, snare backbeat, hi-hat
+   8ths/quarters, ride/crash/toms) and cross-checked against the
+   Rob Ferrell chart. Voice ids mirror src/engine/data/kit.js. Each
+   part is one bar; the arrangement plays them in order as a
+   play-along across the whole song.
    ============================================================ */
 
 // Shared pattern defaults keep each part's inline pattern terse.
@@ -26,103 +17,121 @@ const P = (parts) =>
     pattern: { meter: "4/4", sub: 4, beats: 4, bars: 1, ...pt.pattern },
   }));
 
-// --- Signature grooves (16th grid; beats fall on steps 0,4,8,12) ---
-// Intro: 8th hats + four-on-the-floor kick, no snare.
-const INTRO = { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." };
-// Intro with accents building into the verse (crescendo tail).
-const INTRO_ACC = { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." };
-// Verse: quarter-note hats + dotted-8th/16th gallop kick.
-const VERSE = { hat: "x...x...x...x...", kick: "x..xx..xx..xx..x" };
-// Chorus: back to 8th hats + four-on-floor, snare backbeat, crash on 1.
-const CHORUS = { crash: "x...............", hat: "x.x.x.x.x.x.x.x.", snare: "....x.......x...", kick: "x...x...x...x..." };
-const CHORUS_MID = { hat: "x.x.x.x.x.x.x.x.", snare: "....x.......x...", kick: "x...x...x...x..." };
-// Break: kit nearly drops out (the quiet vocal section).
-const BREAK = { rim: "....x.......x...", kick: "x......." };
-// Build: busy sixteenth kicks ramp back in under 8th hats.
-const BUILD = { hat: "x.x.x.x.x.x.x.x.", snare: "....x.......x...", kick: "x.xxx.xxx.xxx.xx" };
-// Outro: driving four-on-the-floor, snare on all four.
-const OUTRO = { crash: "x...x...x...x...", snare: "x...x...x...x...", kick: "x...x...x...x..." };
-// Fills.
-const FILL_TOMS = { snare: "xxxx............", tom1: "....xxxx........", tom2: "........xxxx....", floor: "............xxxx" };
-const FILL_SNARE = { snare: "x.x.x.x.x.xxxxxx", kick: "x.......x......." };
-
 export const THANKS_FOR_THE_MEMORIES = {
   name: "Thanks For The Memories",
-  bpm: 152,
-  desc: "Fall Out Boy — read from the Rob Ferrell Drum Studio chart. Four-on-the-floor 8th-hat intro/chorus and a quarter-hat, gallop-kick verse, with a mid-song break that builds back on busy 16th kicks. Play along with the whole arrangement.",
+  bpm: 155,
+  desc: "Fall Out Boy — full drum transcription imported from thnks-fr-th-mmrs.mid. Four-on-the-floor kick throughout with 8th-hat intro/chorus and quarter-hat verses. Play along with the whole 111-bar arrangement.",
   parts: P([
-    // --- Intro: 8th hats + four-on-the-floor kick, crescendo (drums enter after 11 bars tacet) ---
-    { label: "Pickup", bars: 1, pattern: { name: "Pickup", tracks: { openhat: "..............x.", hat: "x.x.x.x.x.x.x..." } } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO_ACC } },
-    { label: "Intro", bars: 1, pattern: { name: "Intro", tracks: INTRO_ACC } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_SNARE } },
-
-    // --- Verse 1: quarter hats + gallop kick (repeated section) ---
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Verse 1", bars: 1, pattern: { name: "Verse 1", tracks: VERSE } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_TOMS } },
-
-    // --- Chorus 1: four-on-floor, snare backbeat, crashes ---
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS_MID } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS_MID } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS_MID } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS_MID } },
-    { label: "Chorus 1", bars: 1, pattern: { name: "Chorus 1", tracks: CHORUS_MID } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_TOMS } },
-
-    // --- Verse 2 ---
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Verse 2", bars: 1, pattern: { name: "Verse 2", tracks: VERSE } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_SNARE } },
-
-    // --- Chorus 2 ---
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS_MID } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS_MID } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS_MID } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS_MID } },
-    { label: "Chorus 2", bars: 1, pattern: { name: "Chorus 2", tracks: CHORUS_MID } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_TOMS } },
-
-    // --- Break: kit drops out for the quiet vocal section ---
-    { label: "Break", bars: 1, pattern: { name: "Break", tracks: BREAK } },
-    { label: "Break", bars: 1, pattern: { name: "Break", tracks: BREAK } },
-    { label: "Break", bars: 1, pattern: { name: "Break", tracks: BREAK } },
-    { label: "Break", bars: 1, pattern: { name: "Break", tracks: { rim: "....x.......x...", kick: "x.......x......." } } },
-
-    // --- Build: busy 16th kicks ramp back in ---
-    { label: "Build", bars: 1, pattern: { name: "Build", tracks: BUILD } },
-    { label: "Build", bars: 1, pattern: { name: "Build", tracks: BUILD } },
-    { label: "Build", bars: 1, pattern: { name: "Build", tracks: BUILD } },
-    { label: "Fill", bars: 1, pattern: { name: "Fill", tracks: FILL_TOMS } },
-
-    // --- Final chorus / outro: driving four-on-the-floor ---
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: OUTRO } },
-    { label: "Outro", bars: 1, pattern: { name: "Outro", tracks: { ...OUTRO, snare: "x...x...x.xxxxxx" } } },
-
-    // --- Ending hit ---
-    { label: "Ending", bars: 1, pattern: { name: "Ending", tracks: { crash: "x...............", kick: "x..............." } } },
+    { label: "Bar 1", bars: 1, pattern: { name: "Bar 1", tracks: { tom2: "..............x." } } },
+    { label: "Bar 2", bars: 1, pattern: { name: "Bar 2", tracks: { hat: "x.x.x.x.x.x.x.x.", floor: "x...............", kick: "x...x...x...x..." } } },
+    { label: "Bar 3", bars: 1, pattern: { name: "Bar 3", tracks: { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 4", bars: 1, pattern: { name: "Bar 4", tracks: { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 5", bars: 1, pattern: { name: "Bar 5", tracks: { hat: "x.xxx.x.xxx.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 6", bars: 1, pattern: { name: "Bar 6", tracks: { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 7", bars: 1, pattern: { name: "Bar 7", tracks: { hat: "x.x.x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 8", bars: 1, pattern: { name: "Bar 8", tracks: { hat: "x.x.x.x.........", tom1: "........x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 9", bars: 1, pattern: { name: "Bar 9", tracks: { tom2: "x.x.x.x.........", kick: "x.x.x.x........." } } },
+    { label: "Bar 10", bars: 1, pattern: { name: "Bar 10", tracks: { crash: "x...............", hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 11", bars: 1, pattern: { name: "Bar 11", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 12", bars: 1, pattern: { name: "Bar 12", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 13", bars: 1, pattern: { name: "Bar 13", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 14", bars: 1, pattern: { name: "Bar 14", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 15", bars: 1, pattern: { name: "Bar 15", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 16", bars: 1, pattern: { name: "Bar 16", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x..x", kick: "x...x...x...x..." } } },
+    { label: "Bar 17", bars: 1, pattern: { name: "Bar 17", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 18", bars: 1, pattern: { name: "Bar 18", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 19", bars: 1, pattern: { name: "Bar 19", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 20", bars: 1, pattern: { name: "Bar 20", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 21", bars: 1, pattern: { name: "Bar 21", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 22", bars: 1, pattern: { name: "Bar 22", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 23", bars: 1, pattern: { name: "Bar 23", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 24", bars: 1, pattern: { name: "Bar 24", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x..x", kick: "x...x...x...x..." } } },
+    { label: "Bar 25", bars: 1, pattern: { name: "Bar 25", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 26", bars: 1, pattern: { name: "Bar 26", tracks: { crash: "x...............", hat: "....x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 27", bars: 1, pattern: { name: "Bar 27", tracks: { hat: "x.x.x.x.x.x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 28", bars: 1, pattern: { name: "Bar 28", tracks: { hat: "x.x.....x.x.x...", tom2: "....x...........", snare: "..............x.", floor: "........x.......", kick: "x...x...x...x..." } } },
+    { label: "Bar 29", bars: 1, pattern: { name: "Bar 29", tracks: { openhat: "..........x.....", tom1: "....x...........", snare: "..............x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 30", bars: 1, pattern: { name: "Bar 30", tracks: { crash: "x...............", hat: "....x.x.x.x.x.x.", snare: "x...............", kick: "x...x...x...x..." } } },
+    { label: "Bar 31", bars: 1, pattern: { name: "Bar 31", tracks: { hat: "x.x.x.x.x.x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 32", bars: 1, pattern: { name: "Bar 32", tracks: { hat: "....x.x.x.x.x.x.", tom2: "x...............", floor: "....x...........", kick: "x...x...x...x..." } } },
+    { label: "Bar 33", bars: 1, pattern: { name: "Bar 33", tracks: { hat: "..x...x.x.xxx.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 34", bars: 1, pattern: { name: "Bar 34", tracks: { hat: "....x.x.x.x.x.x.", tom2: "x...............", floor: "....x...........", kick: "x...x...x...x..." } } },
+    { label: "Bar 35", bars: 1, pattern: { name: "Bar 35", tracks: { hat: "x.x.x.x.x.x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 36", bars: 1, pattern: { name: "Bar 36", tracks: { hat: "....x.x.x.x.x.x.", tom2: "x...............", floor: "....x...........", kick: "x...x...x...x..." } } },
+    { label: "Bar 37", bars: 1, pattern: { name: "Bar 37", tracks: { openhat: "........x.x.x.x.", hat: "x...............", tom1: "..x.............", kick: "x...x...x...x..." } } },
+    { label: "Bar 38", bars: 1, pattern: { name: "Bar 38", tracks: { openhat: "x...............", hat: "x...x.x.x.x.x.x.", kick: "x...x...x...x..." } } },
+    { label: "Bar 39", bars: 1, pattern: { name: "Bar 39", tracks: { hat: "x.x.x.x.x.x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 40", bars: 1, pattern: { name: "Bar 40", tracks: { hat: "....x.x.x.x.x.x.", tom2: "x...............", floor: "....x...........", kick: "x...x...x...x..." } } },
+    { label: "Bar 41", bars: 1, pattern: { name: "Bar 41", tracks: { hat: "..xxxxxxx.xxx.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 42", bars: 1, pattern: { name: "Bar 42", tracks: { hat: "....x.x.x.x.x.x.", tom2: "x...............", floor: "....x...........", kick: "x...x...x...x..." } } },
+    { label: "Bar 43", bars: 1, pattern: { name: "Bar 43", tracks: { hat: "x.x.............", tom1: "....x.x.x.x.x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 44", bars: 1, pattern: { name: "Bar 44", tracks: { tom1: "x...x...........", tom2: "........x...x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 45", bars: 1, pattern: { name: "Bar 45", tracks: { tom1: "....x.x.........", tom2: "x...............", snare: "..x.............", floor: "......x.........", kick: "x.....x........." } } },
+    { label: "Bar 46", bars: 1, pattern: { name: "Bar 46", tracks: { crash: "x...............", hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 47", bars: 1, pattern: { name: "Bar 47", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 48", bars: 1, pattern: { name: "Bar 48", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 49", bars: 1, pattern: { name: "Bar 49", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 50", bars: 1, pattern: { name: "Bar 50", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 51", bars: 1, pattern: { name: "Bar 51", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 52", bars: 1, pattern: { name: "Bar 52", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x..x", kick: "x...x...x...x..." } } },
+    { label: "Bar 53", bars: 1, pattern: { name: "Bar 53", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 54", bars: 1, pattern: { name: "Bar 54", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 55", bars: 1, pattern: { name: "Bar 55", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 56", bars: 1, pattern: { name: "Bar 56", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 57", bars: 1, pattern: { name: "Bar 57", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 58", bars: 1, pattern: { name: "Bar 58", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 59", bars: 1, pattern: { name: "Bar 59", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 60", bars: 1, pattern: { name: "Bar 60", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x..x", kick: "x...x...x...x..." } } },
+    { label: "Bar 61", bars: 1, pattern: { name: "Bar 61", tracks: { crash: "........x.......", hat: "x...x...........", snare: "..x.x..x..x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 62", bars: 1, pattern: { name: "Bar 62", tracks: { crash: "x...............", ride: "x.x.x.xxx.xxx.x.", kick: "x..............." } } },
+    { label: "Bar 63", bars: 1, pattern: { name: "Bar 63", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 64", bars: 1, pattern: { name: "Bar 64", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 65", bars: 1, pattern: { name: "Bar 65", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 66", bars: 1, pattern: { name: "Bar 66", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 67", bars: 1, pattern: { name: "Bar 67", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 68", bars: 1, pattern: { name: "Bar 68", tracks: { ride: "x.x.x.xxx.xxx.x." } } },
+    { label: "Bar 69", bars: 1, pattern: { name: "Bar 69", tracks: { ride: "x.x.x.xxx.xxx...", openhat: "..............xx" } } },
+    { label: "Bar 70", bars: 1, pattern: { name: "Bar 70", tracks: { openhat: "x...x...x...x...", tom1: "....x.x.....x...", kick: "x.........x...x." } } },
+    { label: "Bar 71", bars: 1, pattern: { name: "Bar 71", tracks: { openhat: "x...x...x...x.xx", tom1: "....x.x.....x...", kick: "x.........x....." } } },
+    { label: "Bar 72", bars: 1, pattern: { name: "Bar 72", tracks: { openhat: "x...x...x...x...", tom1: "....x.x.....x...", kick: "x.........x...x." } } },
+    { label: "Bar 73", bars: 1, pattern: { name: "Bar 73", tracks: { openhat: "x...x...x...x...", tom1: "....x.x.....x...", tom2: "..............x.", kick: "x.........x....." } } },
+    { label: "Bar 74", bars: 1, pattern: { name: "Bar 74", tracks: { openhat: "x...x...x...x...", tom1: "....x.x.....x...", floor: "x...............", kick: "x.........x...x." } } },
+    { label: "Bar 75", bars: 1, pattern: { name: "Bar 75", tracks: { openhat: "x...x...x...x.xx", tom1: "....x.x.....x...", kick: "x.........x....." } } },
+    { label: "Bar 76", bars: 1, pattern: { name: "Bar 76", tracks: { openhat: "x...x...x...x...", tom1: "....x.x.....x...", kick: "x.........x...x." } } },
+    { label: "Bar 77", bars: 1, pattern: { name: "Bar 77", tracks: { openhat: "....x.x.x.x.x.x.", hat: "x...............", snare: "x...x.x.x.x.x.x.", kick: "x.x.x...x...x..." } } },
+    { label: "Bar 78", bars: 1, pattern: { name: "Bar 78", tracks: { tom2: "x.x.x.x.........", snare: "x.x.x.x.x...x...", kick: "x...x.....x...x." } } },
+    { label: "Bar 79", bars: 1, pattern: { name: "Bar 79", tracks: { crash: "x...............", openhat: "....x...x...x...", hat: "x...............", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 80", bars: 1, pattern: { name: "Bar 80", tracks: { openhat: "....x.......x.xx", tom2: "x.......x.......", snare: "....x.......x...", kick: "x.........x....." } } },
+    { label: "Bar 81", bars: 1, pattern: { name: "Bar 81", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 82", bars: 1, pattern: { name: "Bar 82", tracks: { openhat: "....x.......x.xx", tom2: "x.......x.......", snare: "....x.......x...", kick: "x.........x....." } } },
+    { label: "Bar 83", bars: 1, pattern: { name: "Bar 83", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 84", bars: 1, pattern: { name: "Bar 84", tracks: { openhat: "....x.......x.xx", tom2: "x.......x.......", snare: "....x.......x...", kick: "x.........x....." } } },
+    { label: "Bar 85", bars: 1, pattern: { name: "Bar 85", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 86", bars: 1, pattern: { name: "Bar 86", tracks: { openhat: "x...x...x.......", tom2: "............x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 87", bars: 1, pattern: { name: "Bar 87", tracks: { crash: "x...............", openhat: "....x...x...x...", hat: "x...............", snare: "....x.......x...", floor: "x...............", kick: "x.........x...x." } } },
+    { label: "Bar 88", bars: 1, pattern: { name: "Bar 88", tracks: { openhat: "....x.......x.xx", tom2: "x.......x.......", snare: "....x.......x...", kick: "x.........x....." } } },
+    { label: "Bar 89", bars: 1, pattern: { name: "Bar 89", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 90", bars: 1, pattern: { name: "Bar 90", tracks: { openhat: "....x.......x.xx", tom2: "x.......x.......", snare: "....x.......x...", kick: "x.........x....." } } },
+    { label: "Bar 91", bars: 1, pattern: { name: "Bar 91", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 92", bars: 1, pattern: { name: "Bar 92", tracks: { openhat: "....x...x...x...", snare: "....x.......x...", kick: "x.........x...x." } } },
+    { label: "Bar 93", bars: 1, pattern: { name: "Bar 93", tracks: { crash: "....x...x...x...", hat: "x...x...x...x...", snare: "x...............", kick: "x.x.x.x.x.x.x.x." } } },
+    { label: "Bar 94", bars: 1, pattern: { name: "Bar 94", tracks: { hat: "x...............", snare: "..xxxxxxxxxxxxxx", kick: "x..............." } } },
+    { label: "Bar 95", bars: 1, pattern: { name: "Bar 95", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 96", bars: 1, pattern: { name: "Bar 96", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 97", bars: 1, pattern: { name: "Bar 97", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 98", bars: 1, pattern: { name: "Bar 98", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 99", bars: 1, pattern: { name: "Bar 99", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 100", bars: 1, pattern: { name: "Bar 100", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 101", bars: 1, pattern: { name: "Bar 101", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x..x", kick: "x...x...x...x..." } } },
+    { label: "Bar 102", bars: 1, pattern: { name: "Bar 102", tracks: { crash: "........x...x...", hat: "x...x...........", snare: "..x.x..x..x.x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 103", bars: 1, pattern: { name: "Bar 103", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 104", bars: 1, pattern: { name: "Bar 104", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 105", bars: 1, pattern: { name: "Bar 105", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 106", bars: 1, pattern: { name: "Bar 106", tracks: { hat: "x...x...x...x...", snare: "....x.......x.xx", kick: "x...x...x...x..." } } },
+    { label: "Bar 107", bars: 1, pattern: { name: "Bar 107", tracks: { crash: "x...............", hat: "....x...x...x...", snare: "....x.......x...", kick: "x...x...x...x..." } } },
+    { label: "Bar 108", bars: 1, pattern: { name: "Bar 108", tracks: { hat: "x...x...x...x...", snare: "....x.......x...", kick: "x...x...x.....x." } } },
+    { label: "Bar 109", bars: 1, pattern: { name: "Bar 109", tracks: { crash: "x.......x.......", hat: "....x.......x...", snare: "x...x...x...x...", kick: "..x...x...x...x." } } },
+    { label: "Bar 110", bars: 1, pattern: { name: "Bar 110", tracks: { crash: "....x.......x...", hat: "..x...x...x...x.", snare: "x.......x.......", kick: "..x.x.x...x.x.x." } } },
+    { label: "Bar 111", bars: 1, pattern: { name: "Bar 111", tracks: { crash: "x...............", hat: "x...............", kick: "x..............." } } },
   ]),
 };
