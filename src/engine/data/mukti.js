@@ -1,18 +1,19 @@
 /* ============================================================
-   "Mukti" (Feringhees) — drum part v6, 75 BPM, 4/4, 91 bars.
+   "Mukti" (Feringhees) — drum part v7, 75 BPM, 4/4, 91 bars.
    Written 2026-10-22 against the GarageBand scratch stems and the
    live vocal aligned to the 75 BPM grid, so fills sit in the
-   singer's rests. Bar 1-2 count-in; sections are 8-bar blocks from 3:
-     3-10 intro (crash-8ths groove modelled on the "Sugar, We're Goin
-     Down" intro; the only place with three 16th kicks in a row)
-     11-18 verse 1 (cross-stick "beat + a" motif, kick on 1 and 3)
+   singer's rests. Bars 1-2 count-in; 8-bar sections from bar 3:
+     3-10 intro: crash on every 8th, doubled snare on 2 and 4, floor
+       tom under 4, over Mukti's own kick figure 1 a 2& | 3 a 4&
+       (the "beat + a" motif) — HHFF walk down the kit into bar 11
+     11-18 verse 1 (cross-stick motif, kick on 1 and 3)
      19-26 chorus (half-time, snare on 3; two-beat stop on 26)
      27-34 groove C (backbeat lift, 16th hats)   35-42 violin solo build
      43-50 verse 2   51-58 chorus 2   59-66 groove C   67-74 bridge
      (motif on the floor tom)   75-82 final chorus   83-90 outro on ride
    Fills are hand-hand-foot-foot cells and 8th-note tom walks: never
-   more than two kicks in a row outside the intro. Same part as
-   Mukti_Drums_v6.mid in the GarageBand folder.
+   more than two kicks in a row anywhere. Same part as
+   Mukti_Drums_v7.mid in the GarageBand folder.
    ============================================================ */
 
 const P = (parts) =>
@@ -24,18 +25,18 @@ const P = (parts) =>
 export const MUKTI = {
   name: "Mukti",
   bpm: 75,
-  desc: "Feringhees — drum part v6. Crash-8ths intro, cross-stick verse, half-time anthem choruses with two-beat stops, a building violin-solo section, floor-tom bridge and ride outro. Fills are written into the singer's rests.",
+  desc: "Feringhees — drum part v7. Crash-8ths intro on the song's own kick figure, cross-stick verse, half-time anthem choruses with two-beat stops, a building violin-solo section, floor-tom bridge and ride outro. Fills are written into the singer's rests; single-pedal throughout.",
   parts: P([
     { label: "Count-in 1", bars: 1, pattern: { name: "Count-in 1", tracks: { hat: "................" } } },
     { label: "Count-in 2", bars: 1, pattern: { name: "Count-in 2", tracks: { hat: "................" } } },
-    { label: "Intro (bass) 3", bars: 1, pattern: { name: "Intro (bass) 3", tracks: { hat: "..o...o...o...o.", floor: "x.......x.......", kick: "Xx.x...xXx.x...x" } } },
-    { label: "Intro (bass) 4", bars: 1, pattern: { name: "Intro (bass) 4", tracks: { tom1: "..............XX", snare: "....oo......o...", floor: "x.......x.....XX", kick: "Xx.x...xXx.x.x.x" } } },
-    { label: "Intro 5", bars: 1, pattern: { name: "Intro 5", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......X.x.", floor: "............x.x.", kick: "Xx.x...xXx.x.x.x" } } },
-    { label: "Intro 6", bars: 1, pattern: { name: "Intro 6", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......Xx..", kick: "Xx.x...xXx.x...x" } } },
-    { label: "Intro 7", bars: 1, pattern: { name: "Intro 7", tracks: { crash: "X.x.x.x.X.x...X.", openhat: "............X...", snare: "....Xx......X...", kick: "Xx.x...xXx.x.xxx" } } },
-    { label: "Intro 8", bars: 1, pattern: { name: "Intro 8", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......Xx..", kick: "Xx.x...xXx.x...x" } } },
-    { label: "Intro 9", bars: 1, pattern: { name: "Intro 9", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......X.x.", floor: "............x.x.", kick: "Xx.x...xXx.x.x.x" } } },
-    { label: "Intro 10", bars: 1, pattern: { name: "Intro 10", tracks: { crash: "X.....x.........", hat: "..x.x...x.x.....", tom1: "..............XX", snare: "...x..x..x..X...", floor: "..............XX", kick: "x.x..x..x..x.x.." }, orn: "............f..." } },
+    { label: "Intro (bass) 3", bars: 1, pattern: { name: "Intro (bass) 3", tracks: { hat: "..o...o...o...o.", floor: "x.......x.......", kick: "X..x..x.X..x..x." } } },
+    { label: "Intro (bass) 4", bars: 1, pattern: { name: "Intro (bass) 4", tracks: { snare: "....oo......XX..", floor: "x.......x.......", kick: "X..x..x.X..x..xx" }, orn: "............f..." } },
+    { label: "Intro 5", bars: 1, pattern: { name: "Intro 5", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......Xx..", floor: "............X...", kick: "X..x..x.X..x..x." } } },
+    { label: "Intro 6", bars: 1, pattern: { name: "Intro 6", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......X...", floor: "............X.x.", kick: "X..x..x.X..x..x." } } },
+    { label: "Intro 7", bars: 1, pattern: { name: "Intro 7", tracks: { crash: "X.x.x.x.X.x...x.", openhat: "............X...", snare: "....Xx......X...", floor: "............X...", kick: "X..x..x.X..x..xx" } } },
+    { label: "Intro 8", bars: 1, pattern: { name: "Intro 8", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......Xx..", floor: "............X...", kick: "X..x..x.X..x..x." } } },
+    { label: "Intro 9", bars: 1, pattern: { name: "Intro 9", tracks: { crash: "X.x.x.x.X.x.x.x.", snare: "....Xx......X...", floor: "............X.x.", kick: "X..x..x.X..x..x." } } },
+    { label: "Intro 10", bars: 1, pattern: { name: "Intro 10", tracks: { crash: "X.x.............", tom2: "........xx......", snare: "....xx..........", floor: "............XX..", kick: "X..x..xx..xx..xx" }, orn: "....f..........." } },
     { label: "Verse 1 · 11", bars: 1, pattern: { name: "Verse 1 · 11", tracks: { crash: "x...............", hat: "..o...o...o...o.", rim: "x..oX..ox..oX..o", kick: "X......xX......." } } },
     { label: "Verse 1 · 12", bars: 1, pattern: { name: "Verse 1 · 12", tracks: { hat: "..o...o.........", snare: "............XX..", rim: "x..oX..ox.......", kick: "X......xX.....xx" }, orn: "............f..." } },
     { label: "Verse 1 · 13", bars: 1, pattern: { name: "Verse 1 · 13", tracks: { hat: "..o...o...o...o.", rim: "x..oX..ox..oX..o", kick: "X......xX......." } } },
