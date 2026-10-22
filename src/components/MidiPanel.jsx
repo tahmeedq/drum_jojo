@@ -40,6 +40,7 @@ export default function MidiPanel() {
   const [hitAnn, setHitAnn] = useState({ msg: "", seq: 0 });
   const [rec, setRec] = useState(Recorder.state());
   const [quant, setQuant] = useState(false);
+  const [hearing, setHearing] = useState(0);   // take number being listened back, 0 = none
 
   useEffect(() => {
     const offState = on("midiState", (d) => {
@@ -72,7 +73,8 @@ export default function MidiPanel() {
     const offCal = on("midiCal", (d) => setOffset(d.offset));
     const offRec = on("recState", (d) => setRec(d));
     const offTake = on("recTake", () => setRec(Recorder.state()));
-    return () => { offState(); offStats(); offHit(); offCal(); offRec(); offTake(); };
+    const offHear = on("recPreview", (d) => setHearing(d.n));
+    return () => { offState(); offStats(); offHit(); offCal(); offRec(); offTake(); offHear(); };
   }, []);
 
   const connect = async () => {
@@ -131,7 +133,14 @@ export default function MidiPanel() {
             {takes.slice(-5).map((t) => { const [a, b] = Recorder.barsOf(t); return (
               <div className="rec-take" key={t.n}>
                 <span className="rec-take-lbl">Take {t.n}<small>bars {a}–{b} · {t.hits.length} hits</small></span>
-                <button className="mini" onClick={() => Recorder.download([t], { quantize: quant ? 4 : 0 })} title="Download this take as a Standard MIDI File">.mid</button>
+                <span className="rec-take-btns">
+                  <button className="mini" disabled={S.playing}
+                    onClick={() => (hearing === t.n ? Recorder.stopPreview() : Recorder.preview(t, { quantize: quant ? 4 : 0 }))}
+                    title={S.playing ? "Stop playback to listen back" : "Listen back to this take"}>
+                    {hearing === t.n ? "■" : "▶"}
+                  </button>
+                  <button className="mini" onClick={() => Recorder.download([t], { quantize: quant ? 4 : 0 })} title="Download this take as a Standard MIDI File">.mid</button>
+                </span>
               </div>); })}
             <div className="rec-take rec-tools">
               <label className="rec-q"><input type="checkbox" checked={quant} onChange={(e) => setQuant(e.target.checked)} /> quantize to 16ths</label>

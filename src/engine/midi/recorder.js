@@ -19,12 +19,15 @@
 import { S, emit, on } from "../state.js";
 import { store } from "../core/store.js";
 import { Audio } from "../audio/engine.js";
+import { trigger } from "../audio/voices.js";
+import { GM_DRUM_MAP } from "../data/index.js";
 
 const TPQ = 480, NOTE_LEN = TPQ / 8;
 const grid = [];                 // ring of recent grid steps, each tagged with its segment
 let seg = 0, lastStep = null;    // segment = one unbroken run of the grid (a pass)
 let armed = false, take = null;  // the take being recorded
 let closing = null;              // the previous pass, still open to hits that arrive late
+let pv = null;                   // listen-back: {take, q:[{time,id,vel}], i, end, timer}
 export const takes = [];         // {n, hits:[{note,vel,beat}], startBeat, endBeat, bpm, beats, name}
 
 // Beats per bar — one pattern cycle, as the scheduler counts it (custom patterns can hold several bars).
@@ -88,7 +91,15 @@ on("gridStep", (g) => {
   }
   take.endBeat = g.beat + g.stepBeats;
 });
+// Feed the listen-back queue to the audio clock, 120ms ahead.
+function pump() {
+  const horizon = Audio.now() + 0.12;
+  while (pv.i < pv.q.length && pv.q[pv.i].time < horizon) { const e = pv.q[pv.i++]; trigger(e.id, e.time, e.vel, "monitor"); }
+  if (Audio.now() > pv.end) Recorder.stopPreview();
+}
+
 on("transport", (d) => {
+  if (d.playing) Recorder.stopPreview();
   endTakes();
   if (d.playing) { grid.length = 0; lastStep = null; seg++; if (armed) begin(); }
   emit("recState", Recorder.state());
@@ -116,9 +127,34 @@ export const Recorder = {
 
   // Drop every take; a take in progress starts over from the next step.
   clear() {
+    this.stopPreview();
     takes.length = 0; closing = null;
     if (take) begin();
     emit("recTake", { takes: 0 }); emit("recState", this.state());
+  },
+
+  // Listen back to a take through the kit at its recorded tempo, with the click if it's on.
+  // Quantize matches the export, so you hear what the .mid will hold.
+  preview(t, { quantize = 0 } = {}) {
+    this.stopPreview();
+    if (!t || S.playing) return;
+    Audio.init(); Audio.resume();
+    const t0 = Audio.now() + 0.15, at = (beat) => t0 + (beat - t.startBeat) * 60 / t.bpm;
+    const q = [];
+    for (const h of t.hits) {
+      const id = GM_DRUM_MAP[h.note];
+      if (id) q.push({ time: at(quantize ? Math.round(h.beat * quantize) / quantize : h.beat), id, vel: Math.min(1.4, h.vel / 100) });
+    }
+    if (S.click) for (let b = Math.ceil(t.startBeat); b < t.endBeat; b++) q.push({ time: at(b), id: "click", vel: b % t.beats === 0 });
+    q.sort((a, b) => a.time - b.time);
+    pv = { take: t, q, i: 0, end: at(t.endBeat) + 0.3, timer: setInterval(pump, 25) };
+    pump();
+    emit("recPreview", { n: t.n });
+  },
+  stopPreview() {
+    if (!pv) return;
+    clearInterval(pv.timer); pv = null;
+    emit("recPreview", { n: 0 });
   },
 
   // Bars covered by a take (1-based, inclusive) for labels/filenames.
@@ -139,7 +175,7 @@ export const Recorder = {
     const barTicks = beats * TPQ;
     const end = Math.ceil((Math.max(0, ...tracks.map((tr) => tr.end)) + 1) / barTicks) * barTicks;
     const meta = [
-      [0, metaText(0x03, `Drum Dojo take${selected.length > 1 ? "s" : ""} — ${first.name || itemName()}`)],
+      [0, metaText(0x03, `Drum Dojo take${selected.length > 1 ? "s" : ""} - ${first.name || itemName()}`)],
       [0, [0xff, 0x51, 0x03, ...int24(Math.round(60e6 / bpm))]],
       [0, [0xff, 0x58, 0x04, ...timeSig(beats), 24, 8]],
     ];
