@@ -3,8 +3,10 @@
    ============================================================ */
 import { JAAN_SE_GUZARTE_HAIN } from "./jaanSeGuzarteHain.js";
 import { THANKS_FOR_THE_MEMORIES } from "./thanksForTheMemories.js";
+import { MUKTI } from "./mukti.js";
 
 export const SONGS = [
+  MUKTI,
   JAAN_SE_GUZARTE_HAIN,
   THANKS_FOR_THE_MEMORIES,
   { name: "Rock Anthem", bpm: 112, desc: "Intro → verse → fill → chorus → fill. A classic arrangement.",
