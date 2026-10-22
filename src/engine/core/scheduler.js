@@ -100,6 +100,33 @@ export function setSongPart(i) {
   S.muted = {};
 }
 
+/* ---- Song loop (repeat a range of parts) ---- */
+// Clamped {start,end} or null. Stale ranges (song swapped) are dropped.
+export function songLoopRange() {
+  const sl = S.songLoop;
+  if (!sl || !S.song) return null;
+  const n = S.song.parts.length;
+  const start = Math.max(0, Math.min(sl.start, n - 1));
+  const end = Math.max(start, Math.min(sl.end, n - 1));
+  return { start, end };
+}
+const songLoopBars = () => {
+  const r = songLoopRange();
+  const parts = S.song ? S.song.parts : [];
+  return (r ? parts.slice(r.start, r.end + 1) : parts).reduce((a, p) => a + (p.bars || 1), 0);
+};
+// Set or clear the loop. If playback is outside the new range, jump to its start at once.
+export function setSongLoop(range) {
+  S.songLoop = range ? { start: Math.min(range.start, range.end), end: Math.max(range.start, range.end) } : null;
+  S.repCount = 0;
+  const r = songLoopRange();
+  if (r && S.mode === "song" && (S.songIdx < r.start || S.songIdx > r.end)) {
+    S.songIdx = r.start; S.barsPlayed = 0; setSongPart(r.start);
+    emit("partChanged", { idx: r.start, live: S.playing });
+  }
+  emit("songLoop", { range: r });
+}
+
 // Called at every bar boundary in pattern/lesson mode.
 function onBarComplete(tAt) {
   S.barCount++;
@@ -165,10 +192,21 @@ function loop() {
           S.barCount++;
           S.barsPlayed++;
           if (S.barsPlayed >= S.song.parts[S.songIdx].bars) {
-            S.barsPlayed = 0; S.songIdx = (S.songIdx + 1) % S.song.parts.length;
-            const idx = S.songIdx; setSongPart(idx);
+            S.barsPlayed = 0;
+            // Song loop: repeat a range of parts (set from the timeline) instead of the whole song.
+            const range = songLoopRange();
+            let idx = S.songIdx + 1, wrapped = false;
+            if (range) { if (idx > range.end || idx < range.start) { idx = range.start; wrapped = true; } }
+            else if (idx >= S.song.parts.length) { idx = 0; wrapped = true; }
+            S.songIdx = idx; setSongPart(idx);
             afterAudio(tAt, () => emit("partChanged", { idx, live: true }));
-            if (S.trainer && S.songIdx === 0) setBpm(Math.min(280, S.bpm + S.trainerInc));
+            if (wrapped) {
+              S.repCount++;
+              const rep = S.repCount, bars = songLoopBars();
+              afterAudio(tAt, () => emit("rep", { rep, bars }));
+              if (S.trainer) setBpm(Math.min(280, S.bpm + S.trainerInc));
+              if (range && S.repTarget && S.repCount >= S.repTarget) afterAudio(tAt, () => stop());
+            }
           }
           if (S.trade) afterAudio(tAt, () => emit("banner"));
         } else {
@@ -184,7 +222,11 @@ export function play() {
   if (!isSamplesReady()) loadSamples();
   S.playing = true; S.repCount = 0;
   sessionStart = performance.now();
-  if (S.mode === "song") { S.songIdx = 0; S.barsPlayed = 0; setSongPart(0); emit("partChanged", { idx: 0, live: true }); }
+  if (S.mode === "song") {
+    const range = songLoopRange();
+    const idx = range ? range.start : 0;
+    S.songIdx = idx; S.barsPlayed = 0; setSongPart(idx); emit("partChanged", { idx, live: true });
+  }
   // When a loop section is selected, start playback at the loop start.
   const ls = S.loopSel;
   S.stepIdx = (ls && S.mode === "pattern" && S.current && ls.start < S.current._steps)

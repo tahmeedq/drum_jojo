@@ -16,6 +16,7 @@ export const S = {
   sec: "course", mode: "pattern", current: null,
   activeLesson: null,            // {l, i}
   song: null, songIdx: 0, barsPlayed: 0,
+  songLoop: null,                // song mode: {start,end} part indices to repeat (null = whole song)
   itemKey: null,                 // stable id of the loaded item (for best-scores)
 
   // transport

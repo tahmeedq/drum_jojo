@@ -27,7 +27,9 @@ npm run preview    # serve the production build
 - **Course** — 22 lessons across foundations → rock → funk, with goals, focus
   notes and completion tracking.
 - **Grooves / Rudiments / Fills** — a curated library grouped by style/family.
-- **Song Mode** — chained sections with a live-highlighting timeline.
+- **Song Mode** — chained sections with a live-highlighting timeline. **Loop section**
+  repeats the 8-bar block the playhead is in; shift-click two sections to loop any range.
+  The rep counter, rep target and speed trainer all follow the loop.
 - **Custom-pattern editor** — click grid cells to cycle rest → hit → accent →
   ghost, set beats/subdivision/bars, name it and **save to "My Patterns"**.
 - **Feel & practice tools** — swing slider, count-in, metronome (beats or
