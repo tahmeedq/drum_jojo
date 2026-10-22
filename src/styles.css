@@ -248,6 +248,10 @@ input,select,button{font-family:inherit}
 .rec-meter div{height:100%;width:0;background:linear-gradient(90deg,var(--good),var(--warn));transition:width .06s linear}
 .rec-meter div.clip{background:var(--bad)}
 .rec-err{color:var(--bad)}
+.rec-best{color:var(--warn);margin-left:5px}
+.rec-grade b{display:inline-block;min-width:16px;text-align:center;border-radius:4px;padding:0 3px;margin-right:3px;font-weight:800;color:#0b0e14}
+.rec-grade .g-A{background:var(--good)}.rec-grade .g-B{background:#9fd36a}.rec-grade .g-C{background:var(--warn)}
+.rec-grade .g-D{background:#e8925a}.rec-grade .g-F{background:var(--bad)}
 .rec-tools{justify-content:flex-start;flex-wrap:wrap;background:none;border-style:dashed}
 .rec-q{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);flex:1}
 .songloop-range b{color:var(--txt);font-weight:600}

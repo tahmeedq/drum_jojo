@@ -51,7 +51,7 @@ const itemName = () => (S.mode === "song" && S.song ? S.song.name : (S.current &
 // Start a take. With no time yet (count-in, or armed mid-play) the next grid step sets it.
 function begin(time = null, beat = null, tol = 0) {
   take = { n: 0, hits: [], seg, startTime: time, startBeat: beat, endBeat: beat, tol,
-           bpm: S.bpm, beats: beatsPerBar(), name: itemName() };
+           bpm: S.bpm, beats: beatsPerBar(), sub: (S.current && S.current.sub) || 4, name: itemName() };
 }
 function keep(t) {
   if (!t.hits.length && !AudioIn.on) return;
@@ -250,6 +250,24 @@ export const Recorder = {
     const [a, b] = this.barsOf(t);
     save(wavBytes(t.audio.chans, t.audio.rate), "audio/wav",
       `${(t.name || itemName()).replace(/[^\w]+/g, "-")}-take${t.n}-bars${a}-${b}.wav`);
+  },
+
+  // Timing grade: every hit against the nearest step of the pattern's grid (16ths, or
+  // triplets in a triplet feel) at the take's tempo. Flam graces (another hit within 50ms
+  // after) and deliberately off-grid notes (over 30% of a step out — 32nds, triplets over
+  // 16ths) are left out. Letter from the mean miss: A ≤10ms, B ≤15, C ≤22, D ≤30, else F.
+  grade(t) {
+    const sub = t.sub || 4, stepMs = 60000 / t.bpm / sub;
+    const hs = t.hits.slice().sort((a, b) => a.beat - b.beat), devs = [];
+    hs.forEach((h, i) => {
+      if (hs[i + 1] && (hs[i + 1].beat - h.beat) * 60000 / t.bpm < 50) return;
+      const ms = (h.beat * sub - Math.round(h.beat * sub)) * stepMs;
+      if (Math.abs(ms) <= 0.3 * stepMs) devs.push(ms);
+    });
+    if (devs.length < 4) return null;
+    const mad = devs.reduce((a, d) => a + Math.abs(d), 0) / devs.length;
+    const bias = devs.reduce((a, d) => a + d, 0) / devs.length;
+    return { letter: mad <= 10 ? "A" : mad <= 15 ? "B" : mad <= 22 ? "C" : mad <= 30 ? "D" : "F", mad, bias, n: devs.length };
   },
 
   // Bars covered by a take (1-based, inclusive) for labels/filenames.

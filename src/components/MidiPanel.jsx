@@ -113,6 +113,11 @@ export default function MidiPanel() {
     catch (err) { setStatus(err.message); }
   };
 
+  // Timing grade per take; the tightest of two or more graded takes gets a star.
+  const grades = new Map(takes.map((t) => [t, Recorder.grade(t)]));
+  const graded = takes.filter((t) => grades.get(t));
+  const best = graded.length > 1 ? graded.reduce((x, y) => (grades.get(y).mad < grades.get(x).mad ? y : x)) : null;
+
   const tendency = !stats.samples ? "—"
     : Math.abs(Math.round(stats.mean)) <= 5 ? "Locked in"
     : (stats.mean < 0 ? "−" + Math.abs(Math.round(stats.mean)) + "ms" : "+" + Math.round(stats.mean) + "ms");
@@ -171,9 +176,16 @@ export default function MidiPanel() {
         {ainErr && <div className="rec-status rec-err">{ainErr}</div>}
         {takes.length > 0 && (
           <div className="rec-takes">
-            {takes.slice(-5).map((t) => { const [a, b] = Recorder.barsOf(t); return (
+            {takes.slice(-5).map((t) => { const [a, b] = Recorder.barsOf(t), g = grades.get(t); return (
               <div className="rec-take" key={t.n}>
-                <span className="rec-take-lbl">Take {t.n}<small>bars {a}–{b} · {t.hits.length} hits{t.audio ? " · audio" : ""}</small></span>
+                <span className="rec-take-lbl">
+                  <span>Take {t.n}{t === best && <span className="rec-best" title="Tightest take — closest to the grid">★</span>}</span>
+                  <small>bars {a}–{b} · {t.hits.length} hits{t.audio ? " · audio" : ""}</small>
+                  {g && <small className="rec-grade" title={`Average distance from the beat grid over ${g.n} hits (− = ahead of the beat)`}>
+                    <b className={"g-" + g.letter}>{g.letter}</b> ±{Math.round(g.mad)}ms
+                    {Math.abs(g.bias) >= 3 && ` · ${g.bias < 0 ? "rushes" : "drags"} ${Math.round(Math.abs(g.bias))}ms`}
+                  </small>}
+                </span>
                 <span className="rec-take-btns">
                   <button className="mini" disabled={S.playing}
                     onClick={() => (hearing === t.n ? Recorder.stopPreview() : Recorder.preview(t, { quantize: quant ? 4 : 0 }))}
