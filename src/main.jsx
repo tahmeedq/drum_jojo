@@ -23,3 +23,9 @@ loadKit(store.kit || "acoustic")
   .then(loadCymbals)
   .then(announce)
   .catch(() => emit("kit", { ready: false, label: "Synth kit" }));
+
+// Dev-only hook so tests can inject MIDI hits without hardware.
+if (import.meta.env.DEV) {
+  Promise.all([import("./engine/midi/midi.js"), import("./engine/midi/recorder.js")])
+    .then(([m, r]) => { window.__dojo = { MIDI: m.MIDI, Recorder: r.Recorder, takes: r.takes }; });
+}

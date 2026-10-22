@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { S, on } from "../engine/state.js";
 import { MIDI } from "../engine/midi/midi.js";
+import { Recorder, takes } from "../engine/midi/recorder.js";
 import { Audio } from "../engine/audio/engine.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { useForceRender } from "../hooks/useBus.js";
@@ -37,6 +38,8 @@ export default function MidiPanel() {
   // { msg, seq } — incrementing seq causes the span to remount even when
   // msg text is identical, ensuring screen readers re-announce each hit.
   const [hitAnn, setHitAnn] = useState({ msg: "", seq: 0 });
+  const [rec, setRec] = useState(Recorder.state());
+  const [quant, setQuant] = useState(false);
 
   useEffect(() => {
     const offState = on("midiState", (d) => {
@@ -67,7 +70,9 @@ export default function MidiPanel() {
       setHitAnn((prev) => ({ msg: hitAnnouncement(d.rating, d.deltaMs), seq: prev.seq + 1 }));
     });
     const offCal = on("midiCal", (d) => setOffset(d.offset));
-    return () => { offState(); offStats(); offHit(); offCal(); };
+    const offRec = on("recState", (d) => setRec(d));
+    const offTake = on("recTake", () => setRec(Recorder.state()));
+    return () => { offState(); offStats(); offHit(); offCal(); offRec(); offTake(); };
   }, []);
 
   const connect = async () => {
@@ -106,6 +111,35 @@ export default function MidiPanel() {
         <Readout val={tendency} sub={tendencyTag} lbl="Tendency" />
         <Readout val={stats.samples ? "±" + Math.round(stats.spread) + "ms" : "—"} lbl="Consistency" />
         <Readout val={stats.samples ? (stats.dynAcc ?? 0) + "%" : "—"} lbl="Dynamics" />
+      </div>
+
+      <div className="midi-rec">
+        <div className="cal-head">
+          <span className="cal-lbl">Record takes</span>
+          <button className={"rec-arm" + (rec.armed ? " on" : "")} onClick={() => Recorder.arm(!rec.armed)}
+            title="Arm recording: every play (and every loop pass) becomes a take">
+            {rec.armed ? "● REC" : "○ Rec"}
+          </button>
+        </div>
+        <div className="rec-status">
+          {rec.armed
+            ? (rec.live ? `Recording take ${rec.takes + 1} · ${rec.hits} hit${rec.hits === 1 ? "" : "s"}` : "Armed — press play; each loop pass is a take")
+            : "Arm, play along, then export a take as a .mid file for your DAW"}
+        </div>
+        {takes.length > 0 && (
+          <div className="rec-takes">
+            {takes.slice(-5).map((t) => { const [a, b] = Recorder.barsOf(t); return (
+              <div className="rec-take" key={t.n}>
+                <span className="rec-take-lbl">Take {t.n}<small>bars {a}–{b} · {t.hits.length} hits</small></span>
+                <button className="mini" onClick={() => Recorder.download([t], { quantize: quant ? 4 : 0 })} title="Download this take as a Standard MIDI File">.mid</button>
+              </div>); })}
+            <div className="rec-take rec-tools">
+              <label className="rec-q"><input type="checkbox" checked={quant} onChange={(e) => setQuant(e.target.checked)} /> quantize to 16ths</label>
+              {takes.length > 1 && <button className="mini" onClick={() => Recorder.download(takes.slice(), { quantize: quant ? 4 : 0 })}>all takes .mid</button>}
+              <button className="mini" onClick={() => Recorder.clear()} title="Discard all takes">clear</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="midi-cal">

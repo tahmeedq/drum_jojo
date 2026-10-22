@@ -49,6 +49,10 @@ npm run preview    # serve the production build
   35-lesson / 10-level course.
 - **E-Drum Timing Coach** — grades timing **and dynamics** (were your accents
   loud and ghost notes soft?) live.
+- **Take recorder** — arm **Rec** in the coach panel, play along, and every play
+  (or loop pass) is saved as a take. Export a take as a Standard MIDI File with each
+  note at its real bar position, so it drops straight onto bar 1 of a DAW project.
+  Optional 16th-note quantize on export.
 - **Progress analytics** — daily streak, lifetime practice time, per-item
   personal bests, and an end-of-session report.
 

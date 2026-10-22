@@ -14,6 +14,7 @@ import { trigger } from "../audio/voices.js";
 import { GM_DRUM_MAP } from "../data/index.js";
 import { store, saveStore } from "../core/store.js";
 import { S, emit, on } from "../state.js";
+import { Recorder } from "./recorder.js";
 
 const WINDOW = 0.18;          // max match distance, seconds
 const PERFECT = 18, GOOD = 45; // ms thresholds
@@ -76,6 +77,7 @@ export const MIDI = {
     const id = GM_DRUM_MAP[note];
     const tC = Audio.perfToCtx(msg.timeStamp || performance.now());
     if (S.midiMonitor && id) trigger(id, Audio.now() + 0.001, Math.min(1.4, vel / 100), "monitor");
+    Recorder.hit(note, vel, tC);
     this._grade(id, tC, vel);
   },
 
@@ -127,6 +129,9 @@ export const MIDI = {
     emit("midiCal", { offset: store.midiOffset });
     return store.midiOffset;
   },
+
+  // Inject a hit without hardware (used by tests / dev tools).
+  simulate(note, vel = 100) { this._msg({ data: [0x99, note, vel], timeStamp: performance.now() }); },
 
   setOffset(ms) {
     store.midiOffset = Math.round(ms);

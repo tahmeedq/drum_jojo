@@ -55,10 +55,24 @@ function afterAudio(time, fn) {
   setTimeout(() => { if (S.playing) fn(); }, Math.max(0, (time - Audio.now()) * 1000));
 }
 
+// Absolute song beat of the current bar's first step (bar 1 = beat 0).
+function barBeat() {
+  const beats = S.current.beats || 4;
+  if (S.mode === "song" && S.song) {
+    let bars = 0;
+    for (let i = 0; i < S.songIdx; i++) bars += S.song.parts[i].bars || 1;
+    return (bars + S.barsPlayed) * beats;
+  }
+  return S.barCount * beats;
+}
+
 function scheduleStep(step, time) {
   const p = S.current;
   const sw = swingOffset(step);
   const at = time + sw;
+  // Grid reference for the take recorder: ctx time ↔ song beat.
+  const stepBeats = 1 / p.sub;                       // sub = steps per beat
+  emit("gridStep", { time: at, beat: barBeat() + step * stepBeats, stepBeats, stepSec: stepDur() });
   const clickEvery = S.clickRes === "all" ? 1 : p.sub;
   if (S.click && step % clickEvery === 0) trigger("click", time, step === 0);
 
