@@ -241,6 +241,13 @@ input,select,button{font-family:inherit}
 .rec-take{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:9px;background:rgba(6,8,13,.4);border:1px solid var(--line);font-size:12px}
 .rec-take-lbl{display:flex;flex-direction:column;font-weight:600}.rec-take-lbl small{color:var(--muted);font-weight:400}
 .rec-take-btns{display:flex;gap:5px}.rec-take-btns .mini:disabled{opacity:.45;cursor:not-allowed}
+.rec-audio{display:flex;align-items:center;gap:8px;margin:2px 0 6px;flex-wrap:wrap}
+.rec-audio-lbl{font-size:11.5px;color:var(--muted)}
+.rec-audio select{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer}
+.rec-meter{flex-basis:100%;height:5px;border-radius:3px;background:rgba(6,8,13,.5);border:1px solid var(--line);overflow:hidden}
+.rec-meter div{height:100%;width:0;background:linear-gradient(90deg,var(--good),var(--warn));transition:width .06s linear}
+.rec-meter div.clip{background:var(--bad)}
+.rec-err{color:var(--bad)}
 .rec-tools{justify-content:flex-start;flex-wrap:wrap;background:none;border-style:dashed}
 .rec-q{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);flex:1}
 .songloop-range b{color:var(--txt);font-weight:600}

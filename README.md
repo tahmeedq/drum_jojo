@@ -53,7 +53,10 @@ npm run preview    # serve the production build
   (or loop pass) is saved as a take. Export a take as a Standard MIDI File with each
   note at its real bar position, so it drops straight onto bar 1 of a DAW project.
   "All takes" exports one file with a track per take, ready to comp. Optional
-  16th-note quantize on export.
+  16th-note quantize on export. Pick **Kit audio** (e.g. your module's USB audio)
+  and each take also records your kit's own sound: ▶ plays it back, and **.wav**
+  exports it (24-bit) starting on the take's first bar. Input delay is measured
+  per take against the MIDI hits, so audio and MIDI line up.
 - **Progress analytics** — daily streak, lifetime practice time, per-item
   personal bests, and an end-of-session report.
 

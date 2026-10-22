@@ -15,10 +15,16 @@
    where the rep counter rolls. The cut sits half a step before the
    pass's first step, so a downbeat played a hair early opens the
    new take instead of trailing the old one.
+
+   Kit audio: with an audio input open (AudioIn), each take also
+   keeps the input's sound from its first bar line to its end (plus
+   a ring-out after a stop). The input's round-trip delay is found
+   per take by lining audio onsets up with the MIDI hits.
    ============================================================ */
 import { S, emit, on } from "../state.js";
 import { store } from "../core/store.js";
 import { Audio } from "../audio/engine.js";
+import { AudioIn, wavBytes } from "../audio/input.js";
 import { trigger } from "../audio/voices.js";
 import { GM_DRUM_MAP } from "../data/index.js";
 
@@ -31,8 +37,12 @@ const grid = [];                 // ring of recent grid steps, each tagged with 
 let seg = 0, lastStep = null;    // segment = one unbroken run of the grid (a pass)
 let armed = false, take = null;  // the take being recorded
 let closing = null;              // the previous pass, still open to hits that arrive late
-let pv = null;                   // listen-back: {take, q:[{time,id,vel}], i, end, timer}
-export const takes = [];         // {n, hits:[{note,vel,beat}], startBeat, endBeat, bpm, beats, name}
+let pv = null;                   // listen-back: {take, q:[{time,id,vel}], i, end, timer, src}
+const cap = [];                  // captured input audio [{t0, rate, chans}], trimmed to what takes still need
+const pending = [];              // kept takes waiting for their audio (ring-out + input delay)
+let audioLag = null;             // last measured input round trip, s
+const RING_OUT = 1;              // audio kept after a stop, s
+export const takes = [];         // {n, hits:[{note,vel,beat,t}], startBeat, endBeat, bpm, beats, name, audio}
 
 // Beats per bar — one pattern cycle, as the scheduler counts it (custom patterns can hold several bars).
 const beatsPerBar = () => (S.current && S.current._steps ? S.current._steps / S.current.sub / (S.current.bars || 1) : 4);
@@ -44,11 +54,73 @@ function begin(time = null, beat = null, tol = 0) {
            bpm: S.bpm, beats: beatsPerBar(), name: itemName() };
 }
 function keep(t) {
-  if (!t.hits.length) return;
+  if (!t.hits.length && !AudioIn.on) return;
   t.n = takes.length + 1;
   takes.push(t);
+  if (AudioIn.on) { t.audio = "pending"; t.audioEnd = t.endTime + (t.stopped ? RING_OUT : 0); pending.push(t); }
   emit("recTake", { takes: takes.length, last: t });
 }
+
+/* ---- kit audio ---- */
+const capEnd = () => { const c = cap[cap.length - 1]; return c ? c.t0 + c.chans[0].length / c.rate : 0; };
+// Input samples between ctx times a and b; gaps read as silence.
+function sliceAudio(a, b) {
+  const rate = cap[0].rate, nCh = cap[0].chans.length, n = Math.max(0, Math.round((b - a) * rate));
+  const out = Array.from({ length: nCh }, () => new Float32Array(n));
+  for (const c of cap) {
+    const off = Math.round((c.t0 - a) * rate), len = c.chans[0].length;
+    const from = Math.max(0, -off), to = Math.min(len, n - off);
+    if (to > from) for (let k = 0; k < nCh; k++) out[k].set(c.chans[k].subarray(from, to), off + from);
+  }
+  return { rate, chans: out };
+}
+// Input round trip: the delay (0–200ms) that best lines audio onsets up with the take's MIDI
+// hits, which already sit on the grid's clock. A near-tie goes to the shorter delay, so a
+// steady groove can't alias onto the next note.
+function measureLag(t) {
+  if (t.hits.length < 4) return null;
+  const a = t.startTime - 0.1, { rate, chans } = sliceAudio(a, t.endTime + 0.3);
+  const nF = Math.floor(chans[0].length * 1000 / rate);            // 1ms frames (exact, so no drift at 44.1k)
+  const env = new Float32Array(nF), rise = new Float32Array(nF);
+  for (let f = 0; f < nF; f++) {
+    let m = 0;
+    for (const ch of chans) for (let i = Math.round(f * rate / 1000), e = Math.round((f + 1) * rate / 1000); i < e; i++) { const v = ch[i] < 0 ? -ch[i] : ch[i]; if (v > m) m = v; }
+    env[f] = m;
+  }
+  for (let f = 3; f < nF; f++) rise[f] = Math.max(0, env[f] - env[f - 3]);
+  let best = 0, lag = null;
+  for (let L = 0; L <= 200; L++) {
+    let s = 0;
+    for (const h of t.hits) { const f = Math.round((h.t - a) * 1000) + L; if (f > 0 && f < nF) s += rise[f]; }
+    if (s > best * 1.02) { best = s; lag = L; }
+  }
+  return lag === null ? null : lag / 1000;
+}
+// Attach audio to takes whose span (plus input delay) has been captured. A take with no MIDI
+// hits and a near-silent input (a pass nobody played) is dropped.
+function settleAudio(force = false) {
+  const end = capEnd();
+  for (const t of pending.slice()) {
+    if (!force && end < t.audioEnd + 0.25) continue;
+    pending.splice(pending.indexOf(t), 1);
+    if (!cap.length) { t.audio = null; continue; }
+    const L = measureLag(t);
+    if (L !== null) audioLag = L;
+    const lag = L ?? audioLag ?? (Audio.ctx.baseLatency || 0) + (Audio.ctx.outputLatency || 0) + 0.01;
+    const a = sliceAudio(t.startTime + lag, t.audioEnd + lag);
+    let peak = 0;
+    for (const ch of a.chans) for (let i = 0; i < ch.length; i++) { const v = ch[i] < 0 ? -ch[i] : ch[i]; if (v > peak) peak = v; }
+    if (!t.hits.length && peak < 0.01) { takes.splice(takes.indexOf(t), 1); takes.forEach((x, i) => (x.n = i + 1)); }
+    else t.audio = { ...a, lag, peak };
+    emit("recTake", { takes: takes.length });
+  }
+  // Drop audio no open take can still need.
+  const open = [take, closing, ...pending].filter((t) => t && t.startTime !== null).map((t) => t.startTime - 0.2);
+  const from = open.length ? Math.min(...open) : Infinity;
+  while (cap.length && cap[0].t0 + cap[0].chans[0].length / cap[0].rate < from) cap.shift();
+}
+on("audioChunk", (c) => { cap.push(c); settleAudio(); });
+on("audioIn", (d) => { if (!d.on) { settleAudio(true); cap.length = 0; } });
 // Song beat at ctx time t, read off segment s's grid.
 function beatAt(s, t) {
   let g = null;
@@ -64,12 +136,13 @@ function beatAt(s, t) {
 // Close out on stop/disarm. A take that never got past its first half-step (a stop right on
 // a pass boundary) only holds an early downbeat, so it is dropped.
 function endTakes() {
-  if (closing) { keep(closing); closing = null; }
+  if (closing) { closing.stopped = true; keep(closing); closing = null; }
   if (take && take.startTime !== null) {
     const now = Audio.now();
     if (now >= take.startTime + take.tol) {
       const b = beatAt(take.seg, now);
       if (b !== null) take.endBeat = Math.min(take.endBeat, b);
+      take.endTime = now; take.stopped = true;
       keep(take);
     }
   }
@@ -125,40 +198,58 @@ export const Recorder = {
     if (!into) return;                                  // count-in, or before recording began
     const beat = beatAt(into.seg, t);
     if (beat === null) return;
-    into.hits.push({ note, vel, beat: Math.max(0, beat) });
+    into.hits.push({ note, vel, beat: Math.max(0, beat), t });
     emit("recState", this.state());
   },
 
   // Drop every take; a take in progress starts over from the next step.
   clear() {
     this.stopPreview();
-    takes.length = 0; closing = null;
+    takes.length = 0; closing = null; pending.length = 0;
     if (take) begin();
     emit("recTake", { takes: 0 }); emit("recState", this.state());
   },
 
-  // Listen back to a take through the kit at its recorded tempo, with the click if it's on.
-  // Quantize matches the export, so you hear what the .mid will hold.
+  // Listen back to a take — its recorded kit audio if it has some, else the MIDI through the
+  // Dojo kit (quantized like the export) — at its recorded tempo, with the click if it's on.
   preview(t, { quantize = 0 } = {}) {
     this.stopPreview();
     if (!t || S.playing) return;
     Audio.init(); Audio.resume();
     const t0 = Audio.now() + 0.15, at = (beat) => t0 + (beat - t.startBeat) * 60 / t.bpm;
     const q = [];
-    for (const h of t.hits) {
-      const id = GM_DRUM_MAP[h.note];
-      if (id) q.push({ time: at(quantize ? Math.round(h.beat * quantize) / quantize : h.beat), id, vel: Math.min(1.4, h.vel / 100) });
+    let src = null, end = at(t.endBeat) + 0.3;
+    if (t.audio && t.audio.chans) {
+      const { rate, chans } = t.audio, buf = Audio.ctx.createBuffer(chans.length, chans[0].length, rate);
+      chans.forEach((ch, k) => buf.copyToChannel(ch, k));
+      src = Audio.ctx.createBufferSource(); src.buffer = buf; src.connect(Audio.master); src.start(t0);
+      end = Math.max(end, t0 + buf.duration);
+    } else {
+      for (const h of t.hits) {
+        const id = GM_DRUM_MAP[h.note];
+        if (id) q.push({ time: at(quantize ? Math.round(h.beat * quantize) / quantize : h.beat), id, vel: Math.min(1.4, h.vel / 100) });
+      }
     }
     if (S.click) for (let b = Math.ceil(t.startBeat); b < t.endBeat; b++) q.push({ time: at(b), id: "click", vel: b % t.beats === 0 });
     q.sort((a, b) => a.time - b.time);
-    pv = { take: t, q, i: 0, end: at(t.endBeat) + 0.3, timer: setInterval(pump, 25) };
+    pv = { take: t, q, i: 0, end, src, timer: setInterval(pump, 25) };
     pump();
     emit("recPreview", { n: t.n });
   },
   stopPreview() {
     if (!pv) return;
-    clearInterval(pv.timer); pv = null;
+    clearInterval(pv.timer);
+    if (pv.src) pv.src.stop();
+    pv = null;
     emit("recPreview", { n: 0 });
+  },
+
+  // The take's kit audio as a 24-bit WAV that starts on its first bar line.
+  downloadWav(t) {
+    if (!t.audio || !t.audio.chans) return;
+    const [a, b] = this.barsOf(t);
+    save(wavBytes(t.audio.chans, t.audio.rate), "audio/wav",
+      `${(t.name || itemName()).replace(/[^\w]+/g, "-")}-take${t.n}-bars${a}-${b}.wav`);
   },
 
   // Bars covered by a take (1-based, inclusive) for labels/filenames.
@@ -198,14 +289,16 @@ export const Recorder = {
   },
 
   download(selected, opts) {
-    if (!selected.length) return;
-    const bytes = this.smf(selected, opts);
-    const url = URL.createObjectURL(new Blob([bytes], { type: "audio/midi" }));
-    const a = document.createElement("a"); a.href = url; a.download = this.filename(selected);
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    if (selected.length) save(this.smf(selected, opts), "audio/midi", this.filename(selected));
   },
 };
+
+function save(bytes, type, name) {
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
+  const a = document.createElement("a"); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
 
 // Note on/off events for one take. A note-off is cut short by the next hit on the same
 // note (flams, rolls) and same-tick doubles from quantizing merge, so DAWs keep every stroke.

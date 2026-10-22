@@ -3,6 +3,7 @@ import { S, on } from "../engine/state.js";
 import { MIDI } from "../engine/midi/midi.js";
 import { Recorder, takes } from "../engine/midi/recorder.js";
 import { Audio } from "../engine/audio/engine.js";
+import { AudioIn } from "../engine/audio/input.js";
 import { store, saveStore } from "../engine/core/store.js";
 import { useForceRender } from "../hooks/useBus.js";
 import "../styles/a11y.css";
@@ -41,6 +42,10 @@ export default function MidiPanel() {
   const [rec, setRec] = useState(Recorder.state());
   const [quant, setQuant] = useState(false);
   const [hearing, setHearing] = useState(0);   // take number being listened back, 0 = none
+  const [ain, setAin] = useState({ on: AudioIn.on, label: AudioIn.label });   // kit audio input
+  const [devs, setDevs] = useState([]);
+  const [ainErr, setAinErr] = useState("");
+  const levelRef = useRef(null);
 
   useEffect(() => {
     const offState = on("midiState", (d) => {
@@ -74,8 +79,32 @@ export default function MidiPanel() {
     const offRec = on("recState", (d) => setRec(d));
     const offTake = on("recTake", () => setRec(Recorder.state()));
     const offHear = on("recPreview", (d) => setHearing(d.n));
-    return () => { offState(); offStats(); offHit(); offCal(); offRec(); offTake(); offHear(); };
+    const offAin = on("audioIn", (d) => setAin(d));
+    // Input meter: peak on a -60…0 dBFS scale, written straight to the DOM (~20×/s).
+    const offLvl = on("audioLevel", ({ peak }) => {
+      const el = levelRef.current; if (!el) return;
+      el.style.width = Math.max(0, Math.min(100, (20 * Math.log10(peak + 1e-9) + 60) / 60 * 100)) + "%";
+      el.classList.toggle("clip", peak > 0.98);
+    });
+    // Labels are only readable once the browser has granted audio access.
+    if (navigator.mediaDevices) AudioIn.devices().then((d) => { if (d.some((x) => x.label !== "Audio input")) setDevs(d); }).catch(() => {});
+    return () => { offState(); offStats(); offHit(); offCal(); offRec(); offTake(); offHear(); offAin(); offLvl(); };
   }, []);
+
+  // Kit audio: "" = off, "ask" = first-time access (opens the default input, then lists the
+  // rest and switches to a Roland/V-Drums module if one is there), else a device id.
+  const pickInput = async (v) => {
+    setAinErr("");
+    try {
+      if (!v) return AudioIn.close();
+      await AudioIn.open(v === "ask" ? undefined : v);
+      const d = await AudioIn.devices(); setDevs(d);
+      const kit = d.find((x) => /roland|v-?drums|\bv\d\d\b|td-?\d/i.test(x.label));
+      if (v === "ask" && kit && kit.id !== store.audioIn) await AudioIn.open(kit.id);
+    } catch (err) {
+      setAinErr(err.name === "NotAllowedError" ? "Audio access was blocked — allow it in the browser's site settings." : err.message);
+    }
+  };
 
   const connect = async () => {
     if (S.midiOn) { MIDI.disable(); return; }
@@ -126,20 +155,34 @@ export default function MidiPanel() {
         <div className="rec-status">
           {rec.armed
             ? (rec.live ? `Recording take ${rec.takes + 1} · ${rec.hits} hit${rec.hits === 1 ? "" : "s"}` : "Armed — press play; each loop pass is a take")
+            : ain.on ? "Arm, play along, then export each take as .mid notes and .wav kit audio"
             : "Arm, play along, then export a take as a .mid file for your DAW"}
         </div>
+        <div className="rec-audio">
+          <label className="rec-audio-lbl" htmlFor="rec-ain">Kit audio</label>
+          <select id="rec-ain" value={ain.on ? store.audioIn || "" : ""} onChange={(e) => pickInput(e.target.value)}
+            title="Record your module's own sound (e.g. its USB audio) with every take">
+            <option value="">Off — MIDI only</option>
+            {devs.length ? devs.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)
+              : <option value="ask">Choose input…</option>}
+          </select>
+          {ain.on && <div className="rec-meter" title="Input level"><div ref={levelRef} /></div>}
+        </div>
+        {ainErr && <div className="rec-status rec-err">{ainErr}</div>}
         {takes.length > 0 && (
           <div className="rec-takes">
             {takes.slice(-5).map((t) => { const [a, b] = Recorder.barsOf(t); return (
               <div className="rec-take" key={t.n}>
-                <span className="rec-take-lbl">Take {t.n}<small>bars {a}–{b} · {t.hits.length} hits</small></span>
+                <span className="rec-take-lbl">Take {t.n}<small>bars {a}–{b} · {t.hits.length} hits{t.audio ? " · audio" : ""}</small></span>
                 <span className="rec-take-btns">
                   <button className="mini" disabled={S.playing}
                     onClick={() => (hearing === t.n ? Recorder.stopPreview() : Recorder.preview(t, { quantize: quant ? 4 : 0 }))}
                     title={S.playing ? "Stop playback to listen back" : "Listen back to this take"}>
                     {hearing === t.n ? "■" : "▶"}
                   </button>
-                  <button className="mini" onClick={() => Recorder.download([t], { quantize: quant ? 4 : 0 })} title="Download this take as a Standard MIDI File">.mid</button>
+                  {t.hits.length > 0 && <button className="mini" onClick={() => Recorder.download([t], { quantize: quant ? 4 : 0 })} title="Download this take as a Standard MIDI File">.mid</button>}
+                  {t.audio && <button className="mini" disabled={!t.audio.chans} onClick={() => Recorder.downloadWav(t)}
+                    title={t.audio.chans ? "Download your kit's sound as a WAV starting on the take's first bar" : "Finishing the audio…"}>.wav</button>}
                 </span>
               </div>); })}
             <div className="rec-take rec-tools">
