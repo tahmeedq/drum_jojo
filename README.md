@@ -52,7 +52,8 @@ npm run preview    # serve the production build
 - **Take recorder** — arm **Rec** in the coach panel, play along, and every play
   (or loop pass) is saved as a take. Export a take as a Standard MIDI File with each
   note at its real bar position, so it drops straight onto bar 1 of a DAW project.
-  Optional 16th-note quantize on export.
+  "All takes" exports one file with a track per take, ready to comp. Optional
+  16th-note quantize on export.
 - **Progress analytics** — daily streak, lifetime practice time, per-item
   personal bests, and an end-of-session report.
 

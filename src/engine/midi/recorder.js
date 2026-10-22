@@ -1,109 +1,158 @@
 /* ============================================================
    MIDI take recorder — captures e-kit hits while the transport
-   runs and exports them as a Standard MIDI File (type 0, channel
-   10) with every note at its absolute song position, so a take of
+   runs and exports them as a Standard MIDI File (channel 10)
+   with every note at its absolute song position, so a take of
    bars 19–26 lands on bars 19–26 when dropped at bar 1 in a DAW.
 
    Time base: the scheduler emits "gridStep" {time, beat, stepBeats,
-   stepSec} for every step it schedules (ctx seconds ↔ song beats).
-   A hit at ctx time t is placed at the latest grid step ≤ t plus the
-   fractional distance into that step. Loop passes become takes.
+   stepSec, rep} for every step it schedules (ctx seconds ↔ song
+   beats), ~120ms ahead of the audio. A hit at ctx time t is placed
+   at the latest grid step ≤ t plus the fractional distance into
+   that step.
+
+   Takes: every play, and every loop pass, is a take. A pass starts
+   where the grid jumps (song loop wrap) or, for a looped pattern,
+   where the rep counter rolls. The cut sits half a step before the
+   pass's first step, so a downbeat played a hair early opens the
+   new take instead of trailing the old one.
    ============================================================ */
 import { S, emit, on } from "../state.js";
 import { store } from "../core/store.js";
+import { Audio } from "../audio/engine.js";
 
 const TPQ = 480, NOTE_LEN = TPQ / 8;
-const grid = [];                 // ring of recent grid steps
-let armed = false, take = null;
-export const takes = [];         // {n, hits:[{note,vel,beat}], startBeat, endBeat, bpm, label}
+const grid = [];                 // ring of recent grid steps, each tagged with its segment
+let seg = 0, lastStep = null;    // segment = one unbroken run of the grid (a pass)
+let armed = false, take = null;  // the take being recorded
+let closing = null;              // the previous pass, still open to hits that arrive late
+export const takes = [];         // {n, hits:[{note,vel,beat}], startBeat, endBeat, bpm, beats, name}
 
-const beatsPerBar = () => (S.current && S.current.beats) || 4;
+// Beats per bar — one pattern cycle, as the scheduler counts it (custom patterns can hold several bars).
+const beatsPerBar = () => (S.current && S.current._steps ? S.current._steps / S.current.sub / (S.current.bars || 1) : 4);
+const itemName = () => (S.mode === "song" && S.song ? S.song.name : (S.current && S.current.name) || "pattern");
 
-function startTake(label) {
-  console.log("[rec] startTake", (new Error().stack || "").split("\n").slice(1,5).join(" | "));
-  take = { n: takes.length + 1, hits: [], startBeat: null, endBeat: null, bpm: S.bpm, label: label || "" };
+// Start a take. With no time yet (count-in, or armed mid-play) the next grid step sets it.
+function begin(time = null, beat = null, tol = 0) {
+  take = { n: 0, hits: [], seg, startTime: time, startBeat: beat, endBeat: beat, tol,
+           bpm: S.bpm, beats: beatsPerBar(), name: itemName() };
 }
-function closeTake() {
-  console.log("[rec] closeTake", take ? take.hits.length : null, (new Error().stack || "").split("\n").slice(1,4).join(" | "));
-  if (take && take.hits.length) {
-    takes.push(take);
-    emit("recTake", { takes: takes.length, last: take });
+function keep(t) {
+  if (!t.hits.length) return;
+  t.n = takes.length + 1;
+  takes.push(t);
+  emit("recTake", { takes: takes.length, last: t });
+}
+// Song beat at ctx time t, read off segment s's grid.
+function beatAt(s, t) {
+  let g = null;
+  for (let i = grid.length - 1; i >= 0; i--) {
+    const e = grid[i];
+    if (e.seg > s) continue;
+    if (e.seg < s) break;
+    g = e;
+    if (e.time <= t) break;
+  }
+  return g ? g.beat + ((t - g.time) / g.stepSec) * g.stepBeats : null;
+}
+// Close out on stop/disarm. A take that never got past its first half-step (a stop right on
+// a pass boundary) only holds an early downbeat, so it is dropped.
+function endTakes() {
+  if (closing) { keep(closing); closing = null; }
+  if (take && take.startTime !== null) {
+    const now = Audio.now();
+    if (now >= take.startTime + take.tol) {
+      const b = beatAt(take.seg, now);
+      if (b !== null) take.endBeat = Math.min(take.endBeat, b);
+      keep(take);
+    }
   }
   take = null;
 }
 
 on("gridStep", (g) => {
-  grid.push(g); if (grid.length > 128) grid.shift();
-  if (take) {
-    if (take.startBeat === null) take.startBeat = g.beat;
-    take.endBeat = g.beat + g.stepBeats;
+  const jump = lastStep && Math.abs(g.beat - (lastStep.beat + lastStep.stepBeats)) > 1e-6;
+  const pass = lastStep && g.rep !== lastStep.rep && S.mode !== "song" && S.loop;
+  if (jump || pass) seg++;
+  lastStep = g;
+  grid.push({ ...g, seg }); if (grid.length > 128) grid.shift();
+  // Hits for the closing pass are all in once the audio is well past its end.
+  if (closing && g.time > closing.endTime + 0.3) { keep(closing); closing = null; }
+  if (!take) return;
+  if (take.startTime === null) {
+    Object.assign(take, { seg, startTime: g.time, startBeat: g.beat, tol: g.stepSec / 2 });
+  } else if (take.seg !== seg) {            // a new pass: roll to the next take
+    if (closing) keep(closing);
+    closing = take; closing.endTime = g.time;
+    begin(g.time, g.beat, g.stepSec / 2);
+    emit("recState", Recorder.state());
   }
+  take.endBeat = g.beat + g.stepBeats;
 });
 on("transport", (d) => {
-  if (d.playing) { grid.length = 0; if (armed) startTake(); }
-  else closeTake();
+  endTakes();
+  if (d.playing) { grid.length = 0; lastStep = null; seg++; if (armed) begin(); }
   emit("recState", Recorder.state());
 });
-// A loop pass completed (song loop or pattern loop): roll to the next take.
-on("rep", () => { if (armed && take) { closeTake(); startTake(); emit("recState", Recorder.state()); } });
 
 export const Recorder = {
   get armed() { return armed; },
-  arm(v) { armed = !!v; if (armed && S.playing && !take) startTake(); if (!armed) closeTake(); emit("recState", this.state()); },
-  state() { return { armed, live: !!take, hits: take ? take.hits.length : 0, takes: takes.length }; },
+  arm(v) { armed = !!v; if (armed && S.playing && !take) begin(); if (!armed) endTakes(); emit("recState", this.state()); },
+  state() {
+    return { armed, live: !!take, hits: take ? take.hits.length : 0,
+             takes: takes.length + (closing && closing.hits.length ? 1 : 0) };
+  },
 
   // Called by the MIDI engine for every note-on.
   hit(note, vel, tC) {
-    if (!take || !grid.length) return;
     const t = tC - (store.midiOffset || 0) / 1000;     // same latency correction as the grader
-    let g = grid[0];
-    for (let i = grid.length - 1; i >= 0; i--) if (grid[i].time <= t) { g = grid[i]; break; }
-    const beat = g.beat + ((t - g.time) / g.stepSec) * g.stepBeats;
-    take.hits.push({ note, vel, beat: Math.max(0, beat) });
+    const into = take && take.startTime !== null && t >= take.startTime - take.tol ? take
+      : closing && t >= closing.startTime - closing.tol ? closing : null;
+    if (!into) return;                                  // count-in, or before recording began
+    const beat = beatAt(into.seg, t);
+    if (beat === null) return;
+    into.hits.push({ note, vel, beat: Math.max(0, beat) });
     emit("recState", this.state());
   },
 
-  clear() { takes.length = 0; closeTake(); emit("recTake", { takes: 0 }); emit("recState", this.state()); },
+  // Drop every take; a take in progress starts over from the next step.
+  clear() {
+    takes.length = 0; closing = null;
+    if (take) begin();
+    emit("recTake", { takes: 0 }); emit("recState", this.state());
+  },
 
   // Bars covered by a take (1-based, inclusive) for labels/filenames.
   barsOf(t) {
-    const b = beatsPerBar();
-    return [Math.floor((t.startBeat || 0) / b) + 1, Math.max(1, Math.ceil((t.endBeat || 0) / b))];
+    const b = t.beats || 4;
+    const a = Math.floor((t.startBeat || 0) / b) + 1;
+    return [a, Math.max(a, Math.ceil((t.endBeat || 0) / b))];
   },
 
-  /* ---- Standard MIDI File writer ---- */
+  /* ---- Standard MIDI File writer ----
+     One take → type 0. Several takes → type 1, a track per take, so loop
+     passes over the same bars import as separate DAW tracks to comp from. */
   smf(selected, { quantize = 0 } = {}) {
-    const hits = [];
-    for (const t of selected) for (const h of t.hits) {
-      let beat = h.beat;
-      if (quantize) beat = Math.round(beat * quantize) / quantize;
-      hits.push({ ...h, tick: Math.round(beat * TPQ) });
-    }
-    hits.sort((a, b) => a.tick - b.tick || a.note - b.note);
-    const bpm = selected.length ? selected[0].bpm : S.bpm;
-    const ev = [];                                   // [tick, bytes]
-    const txt = `Drum Dojo take${selected.length > 1 ? "s" : ""} — ${S.song ? S.song.name : (S.current && S.current.name) || "pattern"}`;
-    ev.push([0, [0xff, 0x03, ...vlqBytes(txt.length), ...strBytes(txt)]]);
-    ev.push([0, [0xff, 0x51, 0x03, ...int24(Math.round(60e6 / bpm))]]);
-    ev.push([0, [0xff, 0x58, 0x04, beatsPerBar(), 2, 24, 8]]);
-    for (const h of hits) {
-      ev.push([h.tick, [0x99, h.note & 127, Math.max(1, Math.min(127, h.vel))]]);
-      ev.push([h.tick + NOTE_LEN, [0x89, h.note & 127, 0]]);
-    }
-    const lastTick = hits.length ? hits[hits.length - 1].tick + NOTE_LEN : 0;
+    const first = selected[0] || {};
+    const beats = first.beats || beatsPerBar(), bpm = first.bpm || S.bpm;
+    const tracks = selected.map((t) => noteEvents(t, quantize));
     // Pad to the end of the last bar so the region length is whole bars.
-    const barTicks = beatsPerBar() * TPQ;
-    ev.push([Math.ceil((lastTick + 1) / barTicks) * barTicks, [0xff, 0x2f, 0x00]]);
-    ev.sort((a, b) => a[0] - b[0]);
-    const body = []; let last = 0;
-    for (const [tick, bytes] of ev) { body.push(...vlqBytes(tick - last), ...bytes); last = tick; }
-    const header = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, (TPQ >> 8) & 255, TPQ & 255];
-    const trk = [0x4d, 0x54, 0x72, 0x6b, ...int32(body.length), ...body];
-    return new Uint8Array([...header, ...trk]);
+    const barTicks = beats * TPQ;
+    const end = Math.ceil((Math.max(0, ...tracks.map((tr) => tr.end)) + 1) / barTicks) * barTicks;
+    const meta = [
+      [0, metaText(0x03, `Drum Dojo take${selected.length > 1 ? "s" : ""} — ${first.name || itemName()}`)],
+      [0, [0xff, 0x51, 0x03, ...int24(Math.round(60e6 / bpm))]],
+      [0, [0xff, 0x58, 0x04, ...timeSig(beats), 24, 8]],
+    ];
+    const chunks = selected.length === 1
+      ? [trackChunk([...meta, ...tracks[0].ev], end)]
+      : [trackChunk(meta, end), ...tracks.map((tr, i) => trackChunk([[0, metaText(0x03, `Take ${selected[i].n}`)], ...tr.ev], end))];
+    const header = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, chunks.length > 1 ? 1 : 0,
+                    (chunks.length >> 8) & 255, chunks.length & 255, (TPQ >> 8) & 255, TPQ & 255];
+    return new Uint8Array([...header, ...chunks.flat()]);
   },
 
   filename(selected) {
-    const song = (S.song ? S.song.name : (S.current && S.current.name) || "pattern").replace(/[^\w]+/g, "-");
+    const song = (selected[0].name || itemName()).replace(/[^\w]+/g, "-");
     if (selected.length === 1) { const [a, b] = this.barsOf(selected[0]); return `${song}-take${selected[0].n}-bars${a}-${b}.mid`; }
     return `${song}-${selected.length}takes.mid`;
   },
@@ -118,7 +167,41 @@ export const Recorder = {
   },
 };
 
+// Note on/off events for one take. A note-off is cut short by the next hit on the same
+// note (flams, rolls) and same-tick doubles from quantizing merge, so DAWs keep every stroke.
+function noteEvents(t, quantize) {
+  const hits = t.hits.map((h) => {
+    const beat = quantize ? Math.round(h.beat * quantize) / quantize : h.beat;
+    return { note: h.note & 127, vel: Math.max(1, Math.min(127, h.vel)), tick: Math.round(beat * TPQ) };
+  }).sort((a, b) => a.tick - b.tick || a.note - b.note);
+  const next = {};
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const h = hits[i], j = next[h.note];
+    if (j !== undefined && hits[j].tick === h.tick) { hits[j].vel = Math.max(hits[j].vel, h.vel); h.skip = true; continue; }
+    h.len = j === undefined ? NOTE_LEN : Math.min(NOTE_LEN, hits[j].tick - h.tick);
+    next[h.note] = i;
+  }
+  const ev = []; let end = 0;
+  for (const h of hits) {
+    if (h.skip) continue;
+    ev.push([h.tick, [0x99, h.note, h.vel]], [h.tick + h.len, [0x89, h.note, 0]]);
+    end = Math.max(end, h.tick + h.len);
+  }
+  return { ev, end };
+}
+function trackChunk(ev, end) {
+  ev.sort((a, b) => a[0] - b[0]);                  // stable: an off stays ahead of a re-hit on its tick
+  const body = []; let last = 0;
+  for (const [tick, bytes] of ev) { body.push(...vlqBytes(tick - last), ...bytes); last = tick; }
+  body.push(...vlqBytes(end - last), 0xff, 0x2f, 0x00);
+  return [0x4d, 0x54, 0x72, 0x6b, ...int32(body.length), ...body];
+}
+// [numerator, log2 denominator] for a bar of `beats` quarters: 4 → 4/4, 3.5 → 7/8, 1.25 → 5/16.
+function timeSig(beats) {
+  for (const d of [4, 8, 16]) { const n = beats * d / 4; if (Number.isInteger(n)) return [n, Math.log2(d)]; }
+  return [4, 2];
+}
+function metaText(type, s) { const b = new TextEncoder().encode(s); return [0xff, type, ...vlqBytes(b.length), ...b]; }
 function vlqBytes(n) { const out = [n & 0x7f]; while ((n >>= 7) > 0) out.unshift((n & 0x7f) | 0x80); return out; }
 function int24(n) { return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 function int32(n) { return [(n >>> 24) & 255, (n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-function strBytes(s) { return Array.from(s).map(c => c.charCodeAt(0) & 127); }

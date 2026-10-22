@@ -10,6 +10,7 @@
      "rep"         {rep,bars}        a full loop completed
      "trainerTarget"                 speed trainer reached target bpm
      "expectHit"   {id,time,step,v}  a scheduled note (for MIDI timing)
+     "gridStep"    {time,beat,…,rep} ctx time ↔ song beat (take recorder)
    ============================================================ */
 import { Audio } from "../audio/engine.js";
 import { trigger, loadSamples, isSamplesReady } from "../audio/voices.js";
@@ -56,8 +57,9 @@ function afterAudio(time, fn) {
 }
 
 // Absolute song beat of the current bar's first step (bar 1 = beat 0).
+// A bar is one pattern cycle, _steps / sub beats (3.5 for 7/8 Rock).
 function barBeat() {
-  const beats = S.current.beats || 4;
+  const beats = S.current._steps / S.current.sub;
   if (S.mode === "song" && S.song) {
     let bars = 0;
     for (let i = 0; i < S.songIdx; i++) bars += S.song.parts[i].bars || 1;
@@ -72,7 +74,7 @@ function scheduleStep(step, time) {
   const at = time + sw;
   // Grid reference for the take recorder: ctx time ↔ song beat.
   const stepBeats = 1 / p.sub;                       // sub = steps per beat
-  emit("gridStep", { time: at, beat: barBeat() + step * stepBeats, stepBeats, stepSec: stepDur() });
+  emit("gridStep", { time: at, beat: barBeat() + step * stepBeats, stepBeats, stepSec: stepDur(), rep: S.repCount });
   const clickEvery = S.clickRes === "all" ? 1 : p.sub;
   if (S.click && step % clickEvery === 0) trigger("click", time, step === 0);
 
