@@ -23,6 +23,10 @@ import { trigger } from "../audio/voices.js";
 import { GM_DRUM_MAP } from "../data/index.js";
 
 const TPQ = 480, NOTE_LEN = TPQ / 8;
+// E-kit notes a GM kit won't sound as the pad that sent them → the GM note for the same voice,
+// so DAW kits like GarageBand's play them. Roland defaults: hi-hat edge 22/26, floor-tom rim 58,
+// crash edges 55/52 (GM splash/china, missing from most kits), ride edge 59; 31 is a snare alias.
+const GM_EXPORT = { 22: 42, 26: 46, 31: 38, 58: 43, 55: 49, 52: 57, 59: 51 };
 const grid = [];                 // ring of recent grid steps, each tagged with its segment
 let seg = 0, lastStep = null;    // segment = one unbroken run of the grid (a pass)
 let armed = false, take = null;  // the take being recorded
@@ -208,7 +212,7 @@ export const Recorder = {
 function noteEvents(t, quantize) {
   const hits = t.hits.map((h) => {
     const beat = quantize ? Math.round(h.beat * quantize) / quantize : h.beat;
-    return { note: h.note & 127, vel: Math.max(1, Math.min(127, h.vel)), tick: Math.round(beat * TPQ) };
+    return { note: (GM_EXPORT[h.note] ?? h.note) & 127, vel: Math.max(1, Math.min(127, h.vel)), tick: Math.round(beat * TPQ) };
   }).sort((a, b) => a.tick - b.tick || a.note - b.note);
   const next = {};
   for (let i = hits.length - 1; i >= 0; i--) {
