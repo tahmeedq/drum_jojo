@@ -327,6 +327,7 @@ function EditBar() {
             <select defaultValue={p.sub} onChange={(e) => resize("sub", +e.target.value)}>
               <option value={2}>8th</option>
               <option value={4}>16th</option>
+              <option value={8}>32nd</option>
               <option value={3}>triplet</option>
               <option value={6}>6/8</option>
             </select>

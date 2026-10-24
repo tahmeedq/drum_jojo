@@ -15,6 +15,7 @@ const REST_UP = "b/4", REST_DOWN = "d/4";
 
 // duration token per grid step + how many steps form a beamed/tuplet group
 function durInfo(sub) {
+  if (sub === 8) return { dur: "32", group: 8, tuplet: null };
   if (sub === 6) return { dur: "16", group: 6, tuplet: [6, 4] };
   if (sub === 3) return { dur: "8", group: 3, tuplet: [3, 2] };
   if (sub === 2) return { dur: "8", group: 2, tuplet: null };

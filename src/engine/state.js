@@ -43,4 +43,5 @@ export const S = {
 export const COUNT = {
   4: ["", "e", "&", "a"], 3: ["", "&", "a"],
   6: ["", "ta", "la", "li", "ta", "la"], 2: ["", "&"],
+  8: ["", "", "e", "", "&", "", "a", ""],   // 32nds: count the 16ths, the in-betweens stay blank
 };
